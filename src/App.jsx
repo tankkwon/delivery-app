@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Plus, TrendingUp, Calendar, Truck, Package, ChevronLeft, ChevronRight, X, Trash2, Wallet, CalendarDays, BarChart3 } from 'lucide-react';
+import { Plus, TrendingUp, Calendar, Truck, Package, ChevronLeft, ChevronRight, X, Trash2, Wallet, CalendarDays, BarChart3, UtensilsCrossed } from 'lucide-react';
 
 // 입력 모달을 별도 컴포넌트로 분리 (키보드 문제 해결)
 const InputModal = ({ isOpen, onClose, onSave, initialDate }) => {
@@ -8,8 +8,8 @@ const InputModal = ({ isOpen, onClose, onSave, initialDate }) => {
   const [platform, setPlatform] = useState('coupang');
   const [amount, setAmount] = useState('');
 
-  const COLORS = { coupang: '#00A0E0', baemin: '#2DC6C6', other: '#9333EA' };
-  const PLATFORM_NAMES = { coupang: '쿠팡이츠', baemin: '배민커넥트', other: '기타' };
+  const COLORS = { coupang: '#00A0E0', baemin: '#2DC6C6', yogiyo: '#FA0050', other: '#9333EA' };
+  const PLATFORM_NAMES = { coupang: '쿠팡이츠', baemin: '배민커넥트', yogiyo: '요기요', other: '기타' };
 
   useEffect(() => {
     if (isOpen) {
@@ -29,6 +29,7 @@ const InputModal = ({ isOpen, onClose, onSave, initialDate }) => {
   const PlatformIcon = ({ p }) => {
     if (p === 'coupang') return <Package className="w-5 h-5" style={{ color: COLORS.coupang }} />;
     if (p === 'baemin') return <Truck className="w-5 h-5" style={{ color: COLORS.baemin }} />;
+    if (p === 'yogiyo') return <UtensilsCrossed className="w-5 h-5" style={{ color: COLORS.yogiyo }} />;
     return <Wallet className="w-5 h-5" style={{ color: COLORS.other }} />;
   };
 
@@ -59,17 +60,17 @@ const InputModal = ({ isOpen, onClose, onSave, initialDate }) => {
           </div>
           <div>
             <label className="block text-sm text-gray-600 mb-2">플랫폼</label>
-            <div className="grid grid-cols-3 gap-3">
-              {['coupang', 'baemin', 'other'].map(p => (
+            <div className="grid grid-cols-4 gap-2">
+              {['coupang', 'baemin', 'yogiyo', 'other'].map(p => (
                 <button 
                   key={p} 
                   type="button"
                   onClick={() => setPlatform(p)} 
-                  className={`p-3 rounded-xl border-2 ${platform === p ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                  className={`p-2 rounded-xl border-2 ${platform === p ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
                 >
                   <div className="flex flex-col items-center gap-1">
                     <PlatformIcon p={p} />
-                    <span className="text-sm">{PLATFORM_NAMES[p]}</span>
+                    <span className="text-xs">{PLATFORM_NAMES[p]}</span>
                   </div>
                 </button>
               ))}
@@ -121,8 +122,8 @@ export default function App() {
   const [showInputModal, setShowInputModal] = useState(false);
   const [inputDate, setInputDate] = useState(null);
 
-  const COLORS = { coupang: '#00A0E0', baemin: '#2DC6C6', other: '#9333EA' };
-  const PLATFORM_NAMES = { coupang: '쿠팡이츠', baemin: '배민커넥트', other: '기타' };
+  const COLORS = { coupang: '#00A0E0', baemin: '#2DC6C6', yogiyo: '#FA0050', other: '#9333EA' };
+  const PLATFORM_NAMES = { coupang: '쿠팡이츠', baemin: '배민커넥트', yogiyo: '요기요', other: '기타' };
 
   const saveToStorage = (newRecords) => {
     localStorage.setItem('deliveryRecords', JSON.stringify(newRecords));
@@ -164,11 +165,17 @@ export default function App() {
       const date = new Date(today); date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
       const dayRecords = records.filter(r => r.date === dateStr);
+      const coupang = dayRecords.filter(r => r.platform === 'coupang').reduce((s, r) => s + r.amount, 0);
+      const baemin = dayRecords.filter(r => r.platform === 'baemin').reduce((s, r) => s + r.amount, 0);
+      const yogiyo = dayRecords.filter(r => r.platform === 'yogiyo').reduce((s, r) => s + r.amount, 0);
+      const other = dayRecords.filter(r => r.platform === 'other').reduce((s, r) => s + r.amount, 0);
       data.push({
         date: `${date.getMonth() + 1}/${date.getDate()}`,
-        쿠팡이츠: dayRecords.filter(r => r.platform === 'coupang').reduce((s, r) => s + r.amount, 0),
-        배민커넥트: dayRecords.filter(r => r.platform === 'baemin').reduce((s, r) => s + r.amount, 0),
-        기타: dayRecords.filter(r => r.platform === 'other').reduce((s, r) => s + r.amount, 0),
+        쿠팡이츠: coupang,
+        배민커넥트: baemin,
+        요기요: yogiyo,
+        기타: other,
+        합계: coupang + baemin + yogiyo + other,
       });
     }
     return data;
@@ -180,11 +187,17 @@ export default function App() {
     for (let i = 11; i >= 0; i--) {
       const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const monthRecords = records.filter(r => { const d = new Date(r.date); return d.getFullYear() === date.getFullYear() && d.getMonth() === date.getMonth(); });
+      const coupang = monthRecords.filter(r => r.platform === 'coupang').reduce((s, r) => s + r.amount, 0);
+      const baemin = monthRecords.filter(r => r.platform === 'baemin').reduce((s, r) => s + r.amount, 0);
+      const yogiyo = monthRecords.filter(r => r.platform === 'yogiyo').reduce((s, r) => s + r.amount, 0);
+      const other = monthRecords.filter(r => r.platform === 'other').reduce((s, r) => s + r.amount, 0);
       data.push({
         date: `${date.getMonth() + 1}월`,
-        쿠팡이츠: monthRecords.filter(r => r.platform === 'coupang').reduce((s, r) => s + r.amount, 0),
-        배민커넥트: monthRecords.filter(r => r.platform === 'baemin').reduce((s, r) => s + r.amount, 0),
-        기타: monthRecords.filter(r => r.platform === 'other').reduce((s, r) => s + r.amount, 0),
+        쿠팡이츠: coupang,
+        배민커넥트: baemin,
+        요기요: yogiyo,
+        기타: other,
+        합계: coupang + baemin + yogiyo + other,
       });
     }
     return data;
@@ -193,6 +206,7 @@ export default function App() {
   const getPlatformRatio = () => [
     { name: '쿠팡이츠', emoji: '🔵', value: records.filter(r => r.platform === 'coupang').reduce((s, r) => s + r.amount, 0), color: COLORS.coupang },
     { name: '배민커넥트', emoji: '🩵', value: records.filter(r => r.platform === 'baemin').reduce((s, r) => s + r.amount, 0), color: COLORS.baemin },
+    { name: '요기요', emoji: '🔴', value: records.filter(r => r.platform === 'yogiyo').reduce((s, r) => s + r.amount, 0), color: COLORS.yogiyo },
     { name: '기타', emoji: '🟣', value: records.filter(r => r.platform === 'other').reduce((s, r) => s + r.amount, 0), color: COLORS.other }
   ];
 
@@ -207,10 +221,21 @@ export default function App() {
     return Math.round(man) + '만';
   };
 
+  // 오늘 날짜 포맷
+  const getTodayString = () => {
+    const today = new Date();
+    const month = today.getMonth() + 1;
+    const date = today.getDate();
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    const day = days[today.getDay()];
+    return `${month}월 ${date}일 (${day})`;
+  };
+
   const PlatformIcon = ({ platform, size = 5 }) => {
     const cls = `w-${size} h-${size}`;
     if (platform === 'coupang') return <Package className={cls} style={{ color: COLORS.coupang }} />;
     if (platform === 'baemin') return <Truck className={cls} style={{ color: COLORS.baemin }} />;
+    if (platform === 'yogiyo') return <UtensilsCrossed className={cls} style={{ color: COLORS.yogiyo }} />;
     return <Wallet className={cls} style={{ color: COLORS.other }} />;
   };
 
@@ -222,11 +247,12 @@ export default function App() {
     return (
       <div className="p-4 pb-24">
         <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl p-6 text-white mb-6 shadow-lg">
-          <p className="text-blue-100 text-sm mb-1">오늘의 수익</p>
+          <p className="text-blue-100 text-sm mb-1">📅 {getTodayString()} 수익</p>
           <p className="text-4xl font-bold mb-4">{formatMoney(todayStats.total)}</p>
-          <div className="flex gap-3 text-sm flex-wrap">
+          <div className="flex gap-2 text-sm flex-wrap">
             <span>🔵 쿠팡 {formatMoney(getStats('today', 'coupang').total)}</span>
             <span>🩵 배민 {formatMoney(getStats('today', 'baemin').total)}</span>
+            <span>🔴 요기요 {formatMoney(getStats('today', 'yogiyo').total)}</span>
             <span>🟣 기타 {formatMoney(getStats('today', 'other').total)}</span>
           </div>
         </div>
@@ -249,6 +275,7 @@ export default function App() {
               <Tooltip formatter={(v) => formatMoney(v)} />
               <Bar dataKey="쿠팡이츠" stackId="a" fill={COLORS.coupang} />
               <Bar dataKey="배민커넥트" stackId="a" fill={COLORS.baemin} />
+              <Bar dataKey="요기요" stackId="a" fill={COLORS.yogiyo} />
               <Bar dataKey="기타" stackId="a" fill={COLORS.other} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -284,8 +311,8 @@ export default function App() {
             <button key={p.key} onClick={() => setPeriod(p.key)} className={`px-4 py-2 rounded-full text-sm ${period === p.key ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>{p.label}</button>
           ))}
         </div>
-        <div className="flex gap-2 mb-6 overflow-x-auto">
-          {[{ key: 'all', label: '📊 통합' }, { key: 'coupang', label: '🔵 쿠팡이츠' }, { key: 'baemin', label: '🩵 배민커넥트' }, { key: 'other', label: '🟣 기타' }].map(p => (
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          {[{ key: 'all', label: '📊 통합' }, { key: 'coupang', label: '🔵 쿠팡' }, { key: 'baemin', label: '🩵 배민' }, { key: 'yogiyo', label: '🔴 요기요' }, { key: 'other', label: '🟣 기타' }].map(p => (
             <button key={p.key} onClick={() => setPlatform(p.key)} className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap ${platform === p.key ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'}`}>{p.label}</button>
           ))}
         </div>
@@ -308,6 +335,7 @@ export default function App() {
                 <Tooltip formatter={(v) => formatMoney(v)} />
                 <Bar dataKey="쿠팡이츠" stackId="a" fill={COLORS.coupang} />
                 <Bar dataKey="배민커넥트" stackId="a" fill={COLORS.baemin} />
+                <Bar dataKey="요기요" stackId="a" fill={COLORS.yogiyo} />
                 <Bar dataKey="기타" stackId="a" fill={COLORS.other} radius={[4, 4, 0, 0]} />
               </BarChart>
             ) : (
@@ -316,13 +344,29 @@ export default function App() {
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => formatShortMoney(v)} />
                 <Tooltip formatter={(v) => formatMoney(v)} />
-                <Line type="monotone" dataKey={platform === 'all' ? '쿠팡이츠' : PLATFORM_NAMES[platform]} stroke={platform === 'all' ? COLORS.coupang : COLORS[platform]} strokeWidth={2} dot={false} />
-                {platform === 'all' && <Line type="monotone" dataKey="배민커넥트" stroke={COLORS.baemin} strokeWidth={2} dot={false} />}
-                {platform === 'all' && <Line type="monotone" dataKey="기타" stroke={COLORS.other} strokeWidth={2} dot={false} />}
+                {platform === 'all' ? (
+                  <Line type="monotone" dataKey="합계" stroke="#8B5CF6" strokeWidth={2} dot={false} />
+                ) : (
+                  <Line type="monotone" dataKey={PLATFORM_NAMES[platform]} stroke={COLORS[platform]} strokeWidth={2} dot={false} />
+                )}
               </LineChart>
             )}
           </ResponsiveContainer>
         </div>
+
+        {/* 날짜별 상세 내역 */}
+        <div className="bg-white rounded-2xl p-4 shadow-sm mb-6">
+          <h3 className="font-semibold text-gray-800 mb-4">📋 {period === 'year' ? '월별' : '일별'} 상세</h3>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {(period === 'year' ? monthlyData : dailyData).slice().reverse().map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                <span className="font-medium text-gray-700">{item.date}</span>
+                <span className="font-bold text-blue-600">{formatMoney(item.합계)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {platform === 'all' && (
           <div className="bg-white rounded-2xl p-4 shadow-sm">
             <h3 className="font-semibold text-gray-800 mb-4">플랫폼별 비율</h3>

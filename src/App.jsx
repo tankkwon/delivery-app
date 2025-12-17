@@ -628,22 +628,73 @@ export default function App() {
     };
     const getDayTotal = (day) => getDateRecords(day).reduce((s, r) => s + r.amount, 0);
     const getDayCount = (day) => getDateRecords(day).reduce((s, r) => s + (r.deliveryCount || 1), 0);
-    const getMonthTotal = () => records.filter(r => { const d = new Date(r.date); return d.getFullYear() === year && d.getMonth() === month; }).reduce((s, r) => s + r.amount, 0);
+    
+    // 월별 통계
+    const getMonthRecords = () => records.filter(r => { const d = new Date(r.date); return d.getFullYear() === year && d.getMonth() === month; });
+    const getMonthTotal = () => getMonthRecords().reduce((s, r) => s + r.amount, 0);
+    const getMonthTotalCount = () => getMonthRecords().reduce((s, r) => s + (r.deliveryCount || 1), 0);
+    const getMonthPlatformStats = (platform) => {
+      const platformRecords = getMonthRecords().filter(r => r.platform === platform);
+      return {
+        amount: platformRecords.reduce((s, r) => s + r.amount, 0),
+        count: platformRecords.reduce((s, r) => s + (r.deliveryCount || 1), 0)
+      };
+    };
+    
     const getColorIntensity = (amt) => amt === 0 ? 'bg-gray-50' : amt < 50000 ? 'bg-yellow-100' : amt < 100000 ? 'bg-yellow-200' : amt < 150000 ? 'bg-yellow-300' : amt < 200000 ? 'bg-yellow-400' : 'bg-yellow-500';
 
     const days = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
     const selectedRecords = selectedDate ? getDateRecords(selectedDate) : [];
 
+    const coupangStats = getMonthPlatformStats('coupang');
+    const baeminStats = getMonthPlatformStats('baemin');
+    const yogiyoStats = getMonthPlatformStats('yogiyo');
+    const otherStats = getMonthPlatformStats('other');
+
     return (
       <div className="p-4 pb-24">
-        <div className="flex items-center justify-between mb-4">
+        {/* 월 네비게이션 */}
+        <div className="flex items-center justify-between mb-2">
           <button onClick={() => setCurrentMonth(new Date(year, month - 1, 1))} className="p-2"><ChevronLeft className="w-5 h-5" /></button>
-          <div className="text-center">
-            <h2 className="text-xl font-bold text-gray-800">{year}년 {month + 1}월</h2>
-            <p className="text-sm text-gray-500">총 {formatMoney(getMonthTotal())}</p>
-          </div>
+          <h2 className="text-xl font-bold text-gray-800">{year}년 {month + 1}월</h2>
           <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))} className="p-2"><ChevronRight className="w-5 h-5" /></button>
         </div>
+        
+        {/* 월별 요약 카드 */}
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-4 mb-4 text-white">
+          <div className="text-center mb-3">
+            <p className="text-gray-400 text-sm">이번 달 총 수익</p>
+            <p className="text-2xl font-bold text-yellow-400">{formatMoney(getMonthTotal())}</p>
+            <p className="text-gray-400 text-sm">🚚 {getMonthTotalCount()}건 배달</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="bg-white/10 rounded-lg p-2">
+              <div className="flex items-center gap-1 mb-1">
+                <span>🔵</span><span className="text-gray-300">쿠팡이츠</span>
+              </div>
+              <p className="font-semibold">{formatShortMoney(coupangStats.amount)} · {coupangStats.count}건</p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-2">
+              <div className="flex items-center gap-1 mb-1">
+                <span>🩵</span><span className="text-gray-300">배민커넥트</span>
+              </div>
+              <p className="font-semibold">{formatShortMoney(baeminStats.amount)} · {baeminStats.count}건</p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-2">
+              <div className="flex items-center gap-1 mb-1">
+                <span>🔴</span><span className="text-gray-300">요기요</span>
+              </div>
+              <p className="font-semibold">{formatShortMoney(yogiyoStats.amount)} · {yogiyoStats.count}건</p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-2">
+              <div className="flex items-center gap-1 mb-1">
+                <span>🟣</span><span className="text-gray-300">기타</span>
+              </div>
+              <p className="font-semibold">{formatShortMoney(otherStats.amount)} · {otherStats.count}건</p>
+            </div>
+          </div>
+        </div>
+
         <button onClick={() => setCurrentMonth(new Date())} className="mx-auto block px-4 py-1 text-sm bg-yellow-100 text-yellow-700 rounded-full mb-4">오늘</button>
         
         {/* 광고 배너 */}

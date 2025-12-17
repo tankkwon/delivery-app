@@ -422,9 +422,9 @@ export default function App() {
           </div>
         </div>
 
-        {/* AdMob 광고 (나중에) */}
+        {/* 쿠팡파트너스 광고 (상단) */}
         <div className="mb-4">
-          <AdBanner />
+          <CoupangAd />
         </div>
 
         {/* 이번달 목표 */}
@@ -488,9 +488,9 @@ export default function App() {
           </ResponsiveContainer>
         </div>
 
-        {/* 쿠팡파트너스 광고 (중단) */}
+        {/* AdMob 광고 (하단 - 나중에) */}
         <div className="mb-4">
-          <CoupangAd />
+          <AdBanner />
         </div>
 
         <div className="grid grid-cols-2 gap-3">

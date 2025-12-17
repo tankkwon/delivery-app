@@ -2,7 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { Plus, TrendingUp, Calendar, Truck, Package, ChevronLeft, ChevronRight, X, Trash2, Wallet, CalendarDays, BarChart3, UtensilsCrossed, Target, Settings, Moon } from 'lucide-react';
 
-// 광고 배너 컴포넌트 (나중에 AdMob으로 교체)
+// 쿠팡파트너스 광고 컴포넌트
+const CoupangAd = () => {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://ads-partners.coupang.com/g.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      if (window.PartnersCoupang) {
+        new window.PartnersCoupang.G({
+          id: 951405,
+          template: "carousel",
+          trackingCode: "AF8746998",
+          width: "320",
+          height: "100",
+          tsource: ""
+        });
+      }
+    };
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  return (
+    <div className="flex justify-center my-3">
+      <div id="coupang-ad" className="coupang-ad-container"></div>
+    </div>
+  );
+};
+
+// AdMob 광고 배너 컴포넌트 (나중에 실제 광고로 교체)
 const AdBanner = () => (
   <div className="bg-gray-800 rounded-xl p-3 flex items-center justify-center border border-gray-700">
     <span className="text-gray-500 text-sm">📢 광고 영역</span>
@@ -389,9 +422,9 @@ export default function App() {
           </div>
         </div>
 
-        {/* 광고 배너 */}
+        {/* 쿠팡파트너스 광고 */}
         <div className="mb-4">
-          <AdBanner />
+          <CoupangAd />
         </div>
 
         {/* 이번달 목표 */}

@@ -1,37 +1,23 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Camera, Plus, TrendingUp, Calendar, Truck, Package, ChevronLeft, ChevronRight, Upload, X, Edit3, Trash2, Wallet, CalendarDays } from 'lucide-react';
+import { Plus, TrendingUp, Calendar, Truck, Package, ChevronLeft, ChevronRight, X, Trash2, Wallet, CalendarDays } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [records, setRecords] = useState(() => {
-    // 로컬스토리지에서 불러오기
     const saved = localStorage.getItem('deliveryRecords');
     if (saved) return JSON.parse(saved);
     return [];
   });
   
   const [showInputModal, setShowInputModal] = useState(false);
-  const [showOCRModal, setShowOCRModal] = useState(false);
   const [inputData, setInputData] = useState({ date: new Date().toISOString().split('T')[0], platform: 'coupang', amount: '', memo: '' });
-  const [ocrResult, setOcrResult] = useState(null);
-  const [ocrProcessing, setOcrProcessing] = useState(false);
-  const fileInputRef = useRef(null);
 
   const COLORS = { coupang: '#00A0E0', baemin: '#2DC6C6', other: '#9333EA' };
   const PLATFORM_NAMES = { coupang: '쿠팡이츠', baemin: '배민커넥트', other: '기타' };
 
-  // 로컬스토리지에 저장
   const saveToStorage = (newRecords) => {
     localStorage.setItem('deliveryRecords', JSON.stringify(newRecords));
-  };
-
-  const processOCR = () => {
-    setOcrProcessing(true);
-    setTimeout(() => {
-      setOcrResult({ amount: Math.floor(Math.random() * 50000) + 80000, platform: Math.random() > 0.5 ? 'coupang' : 'baemin', confidence: 0.95 });
-      setOcrProcessing(false);
-    }, 1500);
   };
 
   const saveRecord = (data) => {
@@ -92,12 +78,22 @@ export default function App() {
   };
 
   const getPlatformRatio = () => [
-    { name: '쿠팡이츠', value: records.filter(r => r.platform === 'coupang').reduce((s, r) => s + r.amount, 0), color: COLORS.coupang },
-    { name: '배민커넥트', value: records.filter(r => r.platform === 'baemin').reduce((s, r) => s + r.amount, 0), color: COLORS.baemin },
-    { name: '기타', value: records.filter(r => r.platform === 'other').reduce((s, r) => s + r.amount, 0), color: COLORS.other }
+    { name: '쿠팡이츠', emoji: '🔵', value: records.filter(r => r.platform === 'coupang').reduce((s, r) => s + r.amount, 0), color: COLORS.coupang },
+    { name: '배민커넥트', emoji: '🩵', value: records.filter(r => r.platform === 'baemin').reduce((s, r) => s + r.amount, 0), color: COLORS.baemin },
+    { name: '기타', emoji: '🟣', value: records.filter(r => r.platform === 'other').reduce((s, r) => s + r.amount, 0), color: COLORS.other }
   ];
 
   const formatMoney = (amount) => new Intl.NumberFormat('ko-KR').format(amount) + '원';
+  
+  // 소수점 포함 만원 단위 (1.5만 형식)
+  const formatShortMoney = (amount) => {
+    if (amount === 0) return '0';
+    const man = amount / 10000;
+    if (man < 10) {
+      return man.toFixed(1) + '만';
+    }
+    return Math.round(man) + '만';
+  };
 
   const PlatformIcon = ({ platform, size = 5 }) => {
     const cls = `w-${size} h-${size}`;
@@ -122,21 +118,23 @@ export default function App() {
             <span>🟣 기타 {formatMoney(getStats('today', 'other').total)}</span>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <button onClick={() => setShowOCRModal(true)} className="flex items-center justify-center gap-2 bg-white border-2 border-dashed border-gray-300 rounded-xl p-4 text-gray-600 hover:border-blue-400 active:bg-gray-50">
-            <Camera className="w-5 h-5" /><span>스크린샷 입력</span>
-          </button>
-          <button onClick={() => setShowInputModal(true)} className="flex items-center justify-center gap-2 bg-white border-2 border-dashed border-gray-300 rounded-xl p-4 text-gray-600 hover:border-blue-400 active:bg-gray-50">
-            <Edit3 className="w-5 h-5" /><span>직접 입력</span>
-          </button>
-        </div>
+        
+        {/* 수익 입력 버튼 - 하나로 통합 */}
+        <button 
+          onClick={() => setShowInputModal(true)} 
+          className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white rounded-xl p-4 mb-6 font-semibold shadow-lg active:bg-blue-600"
+        >
+          <Plus className="w-5 h-5" />
+          <span>수익 입력하기</span>
+        </button>
+
         <div className="bg-white rounded-2xl p-4 shadow-sm mb-6">
           <h3 className="font-semibold text-gray-800 mb-4">최근 7일 수익</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={getDailyData(7)}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `${v/10000}만`} />
+              <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => formatShortMoney(v)} />
               <Tooltip formatter={(v) => formatMoney(v)} />
               <Bar dataKey="쿠팡이츠" stackId="a" fill={COLORS.coupang} />
               <Bar dataKey="배민커넥트" stackId="a" fill={COLORS.baemin} />
@@ -171,12 +169,12 @@ export default function App() {
       <div className="p-4 pb-24">
         <h2 className="text-xl font-bold text-gray-800 mb-4">수익 통계</h2>
         <div className="flex gap-2 mb-4">
-          {[{ key: 'week', label: '주간' }, { key: 'month', label: '월간' }, { key: 'year', label: '년간' }].map(p => (
+          {[{ key: 'week', label: '📅 주간' }, { key: 'month', label: '🗓️ 월간' }, { key: 'year', label: '📆 년간' }].map(p => (
             <button key={p.key} onClick={() => setPeriod(p.key)} className={`px-4 py-2 rounded-full text-sm ${period === p.key ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>{p.label}</button>
           ))}
         </div>
         <div className="flex gap-2 mb-6 overflow-x-auto">
-          {[{ key: 'all', label: '통합' }, { key: 'coupang', label: '쿠팡이츠' }, { key: 'baemin', label: '배민커넥트' }, { key: 'other', label: '기타' }].map(p => (
+          {[{ key: 'all', label: '📊 통합' }, { key: 'coupang', label: '🔵 쿠팡이츠' }, { key: 'baemin', label: '🩵 배민커넥트' }, { key: 'other', label: '🟣 기타' }].map(p => (
             <button key={p.key} onClick={() => setPlatform(p.key)} className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap ${platform === p.key ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'}`}>{p.label}</button>
           ))}
         </div>
@@ -195,7 +193,7 @@ export default function App() {
               <BarChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `${v/10000}만`} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => formatShortMoney(v)} />
                 <Tooltip formatter={(v) => formatMoney(v)} />
                 <Bar dataKey="쿠팡이츠" stackId="a" fill={COLORS.coupang} />
                 <Bar dataKey="배민커넥트" stackId="a" fill={COLORS.baemin} />
@@ -205,7 +203,7 @@ export default function App() {
               <LineChart data={dailyData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `${v/10000}만`} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => formatShortMoney(v)} />
                 <Tooltip formatter={(v) => formatMoney(v)} />
                 <Line type="monotone" dataKey={platform === 'all' ? '쿠팡이츠' : PLATFORM_NAMES[platform]} stroke={platform === 'all' ? COLORS.coupang : COLORS[platform]} strokeWidth={2} dot={false} />
                 {platform === 'all' && <Line type="monotone" dataKey="배민커넥트" stroke={COLORS.baemin} strokeWidth={2} dot={false} />}
@@ -224,7 +222,7 @@ export default function App() {
               <div className="flex-1 space-y-2">
                 {ratio.map((item, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                    <span>{item.emoji}</span>
                     <span className="text-sm text-gray-600">{item.name}</span>
                     <span className="text-sm font-semibold ml-auto">{formatMoney(item.value)}</span>
                   </div>
@@ -283,7 +281,7 @@ export default function App() {
               return (
                 <button key={day} onClick={() => setSelectedDate(selectedDate === day ? null : day)} className={`aspect-square rounded-lg flex flex-col items-center justify-center ${getColorIntensity(total)} ${selectedDate === day ? 'ring-2 ring-blue-500' : ''} ${isToday ? 'ring-2 ring-orange-400' : ''}`}>
                   <span className={`text-sm font-medium ${dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-700'} ${total > 150000 ? 'text-white' : ''}`}>{day}</span>
-                  {total > 0 && <span className={`text-xs ${total > 150000 ? 'text-white/90' : 'text-gray-600'}`}>{Math.round(total / 10000)}만</span>}
+                  {total > 0 && <span className={`text-xs ${total > 150000 ? 'text-white/90' : 'text-gray-600'}`}>{formatShortMoney(total)}</span>}
                 </button>
               );
             })}
@@ -375,71 +373,89 @@ export default function App() {
     );
   };
 
-  // 모달들
-  const InputModal = () => (
-    <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50" onClick={(e) => e.target === e.currentTarget && setShowInputModal(false)}>
-      <div className="bg-white w-full max-w-lg rounded-t-3xl p-6 animate-slide-up">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-bold">수익 입력</h3>
-          <button onClick={() => setShowInputModal(false)} className="p-2"><X className="w-5 h-5" /></button>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm text-gray-600 mb-2">날짜</label>
-            <input type="date" value={inputData.date} onChange={(e) => setInputData({ ...inputData, date: e.target.value })} className="w-full p-3 border border-gray-200 rounded-xl" />
-          </div>
-          <div>
-            <label className="block text-sm text-gray-600 mb-2">플랫폼</label>
-            <div className="grid grid-cols-3 gap-3">
-              {['coupang', 'baemin', 'other'].map(p => (
-                <button key={p} onClick={() => setInputData({ ...inputData, platform: p })} className={`p-3 rounded-xl border-2 ${inputData.platform === p ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-                  <div className="flex flex-col items-center gap-1"><PlatformIcon platform={p} /><span className="text-sm">{PLATFORM_NAMES[p]}</span></div>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm text-gray-600 mb-2">금액</label>
-            <input type="number" value={inputData.amount} onChange={(e) => setInputData({ ...inputData, amount: e.target.value })} placeholder="0" className="w-full p-3 border border-gray-200 rounded-xl text-2xl font-bold text-right" />
-          </div>
-          <button onClick={() => { if (inputData.amount) { saveRecord(inputData); setShowInputModal(false); setInputData({ date: new Date().toISOString().split('T')[0], platform: 'coupang', amount: '', memo: '' }); } }} className="w-full bg-blue-500 text-white p-4 rounded-xl font-semibold">저장하기</button>
-        </div>
-      </div>
-    </div>
-  );
+  // 수익 입력 모달 - 키보드 문제 수정
+  const InputModal = () => {
+    const handleBackdropClick = (e) => {
+      // 배경 클릭시에만 닫기 (모달 내부 클릭은 무시)
+      if (e.target === e.currentTarget) {
+        setShowInputModal(false);
+      }
+    };
 
-  const OCRModal = () => (
-    <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50" onClick={(e) => e.target === e.currentTarget && (setShowOCRModal(false), setOcrResult(null))}>
-      <div className="bg-white w-full max-w-lg rounded-t-3xl p-6 animate-slide-up">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-bold">스크린샷으로 입력</h3>
-          <button onClick={() => { setShowOCRModal(false); setOcrResult(null); }} className="p-2"><X className="w-5 h-5" /></button>
-        </div>
-        {!ocrResult ? (
-          <div className="text-center py-8">
-            <input type="file" ref={fileInputRef} onChange={() => processOCR()} accept="image/*" className="hidden" />
-            {ocrProcessing ? (
-              <div className="space-y-4"><div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div><p className="text-gray-600">이미지 분석 중...</p></div>
-            ) : (
-              <><button onClick={() => fileInputRef.current?.click()} className="w-32 h-32 bg-gray-100 rounded-2xl flex flex-col items-center justify-center mx-auto mb-4 active:bg-gray-200"><Upload className="w-8 h-8 text-gray-400 mb-2" /><span className="text-sm text-gray-500">이미지 선택</span></button><p className="text-sm text-gray-400">수익 화면 스크린샷을 올려주세요</p></>
-            )}
+    const handleSave = () => {
+      if (inputData.amount) {
+        saveRecord(inputData);
+        setShowInputModal(false);
+        setInputData({ date: new Date().toISOString().split('T')[0], platform: 'coupang', amount: '', memo: '' });
+      }
+    };
+
+    return (
+      <div 
+        className="fixed inset-0 bg-black/50 flex items-end justify-center z-50" 
+        onClick={handleBackdropClick}
+      >
+        <div 
+          className="bg-white w-full max-w-lg rounded-t-3xl p-6 animate-slide-up"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold">수익 입력</h3>
+            <button onClick={() => setShowInputModal(false)} className="p-2"><X className="w-5 h-5" /></button>
           </div>
-        ) : (
           <div className="space-y-4">
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
-              <p className="text-green-600 text-sm mb-1">✓ 인식 완료</p>
-              <p className="text-2xl font-bold text-gray-800">{formatMoney(ocrResult.amount)}</p>
-              <p className="text-sm text-gray-500">{PLATFORM_NAMES[ocrResult.platform]}</p>
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">날짜</label>
+              <input 
+                type="date" 
+                value={inputData.date} 
+                onChange={(e) => setInputData({ ...inputData, date: e.target.value })} 
+                className="w-full p-3 border border-gray-200 rounded-xl text-base"
+              />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => setOcrResult(null)} className="p-3 border border-gray-300 rounded-xl text-gray-600">다시 촬영</button>
-              <button onClick={() => { saveRecord({ date: inputData.date, platform: ocrResult.platform, amount: ocrResult.amount, memo: 'OCR' }); setShowOCRModal(false); setOcrResult(null); }} className="p-3 bg-blue-500 text-white rounded-xl font-semibold">저장하기</button>
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">플랫폼</label>
+              <div className="grid grid-cols-3 gap-3">
+                {['coupang', 'baemin', 'other'].map(p => (
+                  <button 
+                    key={p} 
+                    type="button"
+                    onClick={() => setInputData({ ...inputData, platform: p })} 
+                    className={`p-3 rounded-xl border-2 ${inputData.platform === p ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <PlatformIcon platform={p} />
+                      <span className="text-sm">{PLATFORM_NAMES[p]}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">금액</label>
+              <input 
+                type="number" 
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={inputData.amount} 
+                onChange={(e) => setInputData({ ...inputData, amount: e.target.value })} 
+                placeholder="0" 
+                className="w-full p-3 border border-gray-200 rounded-xl text-2xl font-bold text-right"
+                onFocus={(e) => e.target.select()}
+              />
+            </div>
+            <button 
+              type="button"
+              onClick={handleSave} 
+              className="w-full bg-blue-500 text-white p-4 rounded-xl font-semibold active:bg-blue-600"
+            >
+              저장하기
+            </button>
           </div>
-        )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -465,7 +481,6 @@ export default function App() {
         ))}
       </nav>
       {showInputModal && <InputModal />}
-      {showOCRModal && <OCRModal />}
       <style>{`
         @keyframes slide-up {
           from { transform: translateY(100%); }
@@ -473,6 +488,14 @@ export default function App() {
         }
         .animate-slide-up { animation: slide-up 0.3s ease-out; }
         .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 12px); }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type="number"] {
+          -moz-appearance: textfield;
+        }
       `}</style>
     </div>
   );

@@ -1,6 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Plus, TrendingUp, Calendar, Truck, Package, ChevronLeft, ChevronRight, X, Trash2, Wallet, CalendarDays, BarChart3, UtensilsCrossed, Target, Settings } from 'lucide-react';
+import { Plus, TrendingUp, Calendar, Truck, Package, ChevronLeft, ChevronRight, X, Trash2, Wallet, CalendarDays, BarChart3, UtensilsCrossed, Target, Settings, Moon } from 'lucide-react';
+
+// 광고 배너 컴포넌트 (나중에 AdMob으로 교체)
+const AdBanner = () => (
+  <div className="bg-gray-800 rounded-xl p-3 flex items-center justify-center border border-gray-700">
+    <span className="text-gray-500 text-sm">📢 광고 영역</span>
+  </div>
+);
+
+// 달돈 로고 컴포넌트
+const Logo = () => (
+  <div className="flex items-center gap-2">
+    <div className="relative">
+      <Moon className="w-8 h-8 text-yellow-400 fill-yellow-400" />
+      <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs font-bold text-gray-900">₩</span>
+    </div>
+    <span className="text-xl font-bold text-gray-800">달돈</span>
+  </div>
+);
 
 // 목표 설정 모달
 const GoalModal = ({ isOpen, onClose, currentGoal, onSave }) => {
@@ -39,7 +57,7 @@ const GoalModal = ({ isOpen, onClose, currentGoal, onSave }) => {
         </div>
         <div className="flex gap-2">
           <button onClick={() => { onSave(0); onClose(); }} className="flex-1 p-3 border border-gray-300 rounded-xl text-gray-600">초기화</button>
-          <button onClick={() => { if (goal) { onSave(parseInt(goal)); onClose(); } }} className="flex-1 p-3 bg-blue-500 text-white rounded-xl font-semibold">저장</button>
+          <button onClick={() => { if (goal) { onSave(parseInt(goal)); onClose(); } }} className="flex-1 p-3 bg-yellow-500 text-gray-900 rounded-xl font-semibold">저장</button>
         </div>
       </div>
     </div>
@@ -97,7 +115,7 @@ const InputModal = ({ isOpen, onClose, onSave, initialDate }) => {
             <label className="block text-sm text-gray-600 mb-2">플랫폼</label>
             <div className="grid grid-cols-4 gap-2">
               {['coupang', 'baemin', 'yogiyo', 'other'].map(p => (
-                <button key={p} type="button" onClick={() => setPlatform(p)} className={`p-2 rounded-xl border-2 ${platform === p ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+                <button key={p} type="button" onClick={() => setPlatform(p)} className={`p-2 rounded-xl border-2 ${platform === p ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200'}`}>
                   <div className="flex flex-col items-center gap-1">
                     <PlatformIcon p={p} />
                     <span className="text-xs">{PLATFORM_NAMES[p]}</span>
@@ -135,14 +153,14 @@ const InputModal = ({ isOpen, onClose, onSave, initialDate }) => {
           {deliveryCount && amount && (
             <div className="bg-gray-50 rounded-xl p-3 text-center">
               <span className="text-sm text-gray-500">건당 평균: </span>
-              <span className="font-bold text-blue-600">{new Intl.NumberFormat('ko-KR').format(Math.round(parseInt(amount) / parseInt(deliveryCount)))}원</span>
+              <span className="font-bold text-yellow-600">{new Intl.NumberFormat('ko-KR').format(Math.round(parseInt(amount) / parseInt(deliveryCount)))}원</span>
             </div>
           )}
           <button 
             type="button"
             onClick={handleSave} 
             disabled={!amount || !deliveryCount}
-            className={`w-full p-4 rounded-xl font-semibold ${amount && deliveryCount ? 'bg-blue-500 text-white active:bg-blue-600' : 'bg-gray-200 text-gray-400'}`}
+            className={`w-full p-4 rounded-xl font-semibold ${amount && deliveryCount ? 'bg-yellow-500 text-gray-900 active:bg-yellow-600' : 'bg-gray-200 text-gray-400'}`}
           >
             저장하기
           </button>
@@ -168,6 +186,9 @@ export default function App() {
   const [showInputModal, setShowInputModal] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [inputDate, setInputDate] = useState(null);
+  
+  // 선택된 날짜 (홈 화면용)
+  const [selectedDay, setSelectedDay] = useState(new Date());
 
   const COLORS = { coupang: '#00A0E0', baemin: '#2DC6C6', yogiyo: '#FA0050', other: '#9333EA' };
   const PLATFORM_NAMES = { coupang: '쿠팡이츠', baemin: '배민커넥트', yogiyo: '요기요', other: '기타' };
@@ -196,6 +217,42 @@ export default function App() {
   const openInputModal = (date = null) => {
     setInputDate(date);
     setShowInputModal(true);
+  };
+
+  // 날짜 이동 함수
+  const goToPrevDay = () => {
+    const newDate = new Date(selectedDay);
+    newDate.setDate(newDate.getDate() - 1);
+    setSelectedDay(newDate);
+  };
+
+  const goToNextDay = () => {
+    const newDate = new Date(selectedDay);
+    newDate.setDate(newDate.getDate() + 1);
+    setSelectedDay(newDate);
+  };
+
+  const goToToday = () => {
+    setSelectedDay(new Date());
+  };
+
+  const isToday = () => {
+    const today = new Date();
+    return selectedDay.toISOString().split('T')[0] === today.toISOString().split('T')[0];
+  };
+
+  const getSelectedDateString = () => {
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    return `${selectedDay.getMonth() + 1}월 ${selectedDay.getDate()}일 (${days[selectedDay.getDay()]})`;
+  };
+
+  const getStatsForDate = (date, platform = 'all') => {
+    const dateStr = date.toISOString().split('T')[0];
+    let filtered = records.filter(r => r.date === dateStr);
+    if (platform !== 'all') filtered = filtered.filter(r => r.platform === platform);
+    const total = filtered.reduce((sum, r) => sum + r.amount, 0);
+    const totalCount = filtered.reduce((sum, r) => sum + (r.deliveryCount || 1), 0);
+    return { total, count: filtered.length, totalDeliveries: totalCount, avg: totalCount > 0 ? Math.round(total / totalCount) : 0 };
   };
 
   const getStats = (period = 'all', platform = 'all') => {
@@ -278,12 +335,6 @@ export default function App() {
     return Math.round(man) + '만';
   };
 
-  const getTodayString = () => {
-    const today = new Date();
-    const days = ['일', '월', '화', '수', '목', '금', '토'];
-    return `${today.getMonth() + 1}월 ${today.getDate()}일 (${days[today.getDay()]})`;
-  };
-
   const getThisMonthProgress = () => {
     const thisMonthStats = getStats('thisMonth');
     if (monthlyGoal <= 0) return 0;
@@ -300,24 +351,47 @@ export default function App() {
 
   // 홈 화면
   const HomeScreen = () => {
-    const todayStats = getStats('today');
+    const dayStats = getStatsForDate(selectedDay);
     const weekStats = getStats('week');
     const thisMonthStats = getStats('thisMonth');
     const progress = getThisMonthProgress();
 
     return (
       <div className="p-4 pb-24">
-        {/* 오늘 수익 */}
-        <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl p-6 text-white mb-4 shadow-lg">
-          <p className="text-blue-100 text-sm mb-1">📅 {getTodayString()} 수익</p>
-          <p className="text-4xl font-bold mb-2">{formatMoney(todayStats.total)}</p>
-          <p className="text-blue-100 text-sm mb-3">🚚 {todayStats.totalDeliveries}건 배달</p>
-          <div className="flex gap-2 text-xs flex-wrap">
-            <span>🔵 쿠팡 {formatMoney(getStats('today', 'coupang').total)}</span>
-            <span>🩵 배민 {formatMoney(getStats('today', 'baemin').total)}</span>
-            <span>🔴 요기요 {formatMoney(getStats('today', 'yogiyo').total)}</span>
-            <span>🟣 기타 {formatMoney(getStats('today', 'other').total)}</span>
+        {/* 일별 수익 - 화살표로 날짜 이동 */}
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-5 text-white mb-4 shadow-lg">
+          {/* 날짜 네비게이션 */}
+          <div className="flex items-center justify-between mb-3">
+            <button onClick={goToPrevDay} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <div className="text-center">
+              <p className="text-yellow-400 font-medium">📅 {getSelectedDateString()}</p>
+              {!isToday() && (
+                <button onClick={goToToday} className="text-xs text-gray-400 underline mt-1">오늘로 이동</button>
+              )}
+            </div>
+            <button onClick={goToNextDay} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <ChevronRight className="w-6 h-6" />
+            </button>
           </div>
+          
+          {/* 수익 표시 */}
+          <p className="text-4xl font-bold text-center text-yellow-400 mb-2">{formatMoney(dayStats.total)}</p>
+          <p className="text-gray-400 text-sm text-center mb-4">🚚 {dayStats.totalDeliveries}건 배달</p>
+          
+          {/* 플랫폼별 */}
+          <div className="flex gap-2 text-xs flex-wrap justify-center">
+            <span className="bg-white/10 px-2 py-1 rounded-full">🔵 쿠팡 {formatMoney(getStatsForDate(selectedDay, 'coupang').total)}</span>
+            <span className="bg-white/10 px-2 py-1 rounded-full">🩵 배민 {formatMoney(getStatsForDate(selectedDay, 'baemin').total)}</span>
+            <span className="bg-white/10 px-2 py-1 rounded-full">🔴 요기요 {formatMoney(getStatsForDate(selectedDay, 'yogiyo').total)}</span>
+            <span className="bg-white/10 px-2 py-1 rounded-full">🟣 기타 {formatMoney(getStatsForDate(selectedDay, 'other').total)}</span>
+          </div>
+        </div>
+
+        {/* 광고 배너 */}
+        <div className="mb-4">
+          <AdBanner />
         </div>
 
         {/* 이번달 목표 */}
@@ -336,12 +410,12 @@ export default function App() {
               </div>
               <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
                 <div 
-                  className={`h-4 rounded-full transition-all ${progress >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                  className={`h-4 rounded-full transition-all ${progress >= 100 ? 'bg-green-500' : 'bg-yellow-500'}`}
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
               <div className="text-center">
-                <span className={`text-2xl font-bold ${progress >= 100 ? 'text-green-500' : 'text-blue-500'}`}>{progress}%</span>
+                <span className={`text-2xl font-bold ${progress >= 100 ? 'text-green-500' : 'text-yellow-600'}`}>{progress}%</span>
                 <span className="text-gray-500 text-sm ml-1">달성</span>
                 {progress >= 100 && <span className="ml-2">🎉</span>}
               </div>
@@ -360,7 +434,7 @@ export default function App() {
           )}
         </div>
         
-        <button onClick={() => openInputModal()} className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white rounded-xl p-4 mb-4 font-semibold shadow-lg active:bg-blue-600">
+        <button onClick={() => openInputModal(selectedDay.toISOString().split('T')[0])} className="w-full flex items-center justify-center gap-2 bg-yellow-500 text-gray-900 rounded-xl p-4 mb-4 font-semibold shadow-lg active:bg-yellow-600">
           <Plus className="w-5 h-5" />
           <span>수익 입력하기</span>
         </button>
@@ -379,6 +453,11 @@ export default function App() {
               <Bar dataKey="기타" stackId="a" fill={COLORS.other} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* 광고 배너 */}
+        <div className="mb-4">
+          <AdBanner />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -401,7 +480,7 @@ export default function App() {
   const StatsScreen = () => {
     const [period, setPeriod] = useState('month');
     const [platform, setPlatform] = useState('all');
-    const [viewType, setViewType] = useState('amount'); // 'amount' or 'count'
+    const [viewType, setViewType] = useState('amount');
     const stats = getStats(period, platform);
     const dailyData = getDailyData(period === 'week' ? 7 : 30);
     const monthlyData = getMonthlyData();
@@ -411,49 +490,53 @@ export default function App() {
       <div className="p-4 pb-24">
         <h2 className="text-xl font-bold text-gray-800 mb-4">수익 통계</h2>
         
-        {/* 금액/건수 토글 */}
         <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
-          <button onClick={() => setViewType('amount')} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${viewType === 'amount' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>
+          <button onClick={() => setViewType('amount')} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${viewType === 'amount' ? 'bg-white shadow text-yellow-600' : 'text-gray-500'}`}>
             💰 금액
           </button>
-          <button onClick={() => setViewType('count')} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${viewType === 'count' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>
+          <button onClick={() => setViewType('count')} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${viewType === 'count' ? 'bg-white shadow text-yellow-600' : 'text-gray-500'}`}>
             🚚 건수
           </button>
         </div>
 
         <div className="flex gap-2 mb-4">
           {[{ key: 'week', label: '📅 주간' }, { key: 'month', label: '🗓️ 월간' }, { key: 'year', label: '📆 년간' }].map(p => (
-            <button key={p.key} onClick={() => setPeriod(p.key)} className={`px-4 py-2 rounded-full text-sm ${period === p.key ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>{p.label}</button>
+            <button key={p.key} onClick={() => setPeriod(p.key)} className={`px-4 py-2 rounded-full text-sm ${period === p.key ? 'bg-yellow-500 text-gray-900' : 'bg-gray-100 text-gray-600'}`}>{p.label}</button>
           ))}
         </div>
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {[{ key: 'all', label: '📊 통합' }, { key: 'coupang', label: '🔵 쿠팡' }, { key: 'baemin', label: '🩵 배민' }, { key: 'yogiyo', label: '🔴 요기요' }, { key: 'other', label: '🟣 기타' }].map(p => (
-            <button key={p.key} onClick={() => setPlatform(p.key)} className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap ${platform === p.key ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'}`}>{p.label}</button>
+            <button key={p.key} onClick={() => setPlatform(p.key)} className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap ${platform === p.key ? 'bg-gray-800 text-yellow-400' : 'bg-gray-100 text-gray-600'}`}>{p.label}</button>
           ))}
         </div>
 
-        <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl p-4 mb-6 text-white">
-          <p className="text-white/80 text-sm mb-1">{period === 'week' ? '최근 7일' : period === 'month' ? '최근 30일' : '최근 1년'}{platform !== 'all' && ` · ${PLATFORM_NAMES[platform]}`}</p>
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-4 mb-4 text-white">
+          <p className="text-gray-400 text-sm mb-1">{period === 'week' ? '최근 7일' : period === 'month' ? '최근 30일' : '최근 1년'}{platform !== 'all' && ` · ${PLATFORM_NAMES[platform]}`}</p>
           {viewType === 'amount' ? (
             <>
-              <p className="text-3xl font-bold mb-3">{formatMoney(stats.total)}</p>
+              <p className="text-3xl font-bold text-yellow-400 mb-3">{formatMoney(stats.total)}</p>
               <div className="flex gap-4 text-sm">
-                <div><p className="text-white/70">배달 건수</p><p className="font-semibold">{stats.totalDeliveries}건</p></div>
-                <div><p className="text-white/70">건당 평균</p><p className="font-semibold">{formatMoney(stats.avg)}</p></div>
+                <div><p className="text-gray-400">배달 건수</p><p className="font-semibold">{stats.totalDeliveries}건</p></div>
+                <div><p className="text-gray-400">건당 평균</p><p className="font-semibold">{formatMoney(stats.avg)}</p></div>
               </div>
             </>
           ) : (
             <>
-              <p className="text-3xl font-bold mb-3">{stats.totalDeliveries}건</p>
+              <p className="text-3xl font-bold text-yellow-400 mb-3">{stats.totalDeliveries}건</p>
               <div className="flex gap-4 text-sm">
-                <div><p className="text-white/70">총 금액</p><p className="font-semibold">{formatMoney(stats.total)}</p></div>
-                <div><p className="text-white/70">건당 평균</p><p className="font-semibold">{formatMoney(stats.avg)}</p></div>
+                <div><p className="text-gray-400">총 금액</p><p className="font-semibold">{formatMoney(stats.total)}</p></div>
+                <div><p className="text-gray-400">건당 평균</p><p className="font-semibold">{formatMoney(stats.avg)}</p></div>
               </div>
             </>
           )}
         </div>
 
-        <div className="bg-white rounded-2xl p-4 shadow-sm mb-6">
+        {/* 광고 배너 */}
+        <div className="mb-4">
+          <AdBanner />
+        </div>
+
+        <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
           <h3 className="font-semibold text-gray-800 mb-4">{period === 'year' ? '월별' : '일별'} {viewType === 'amount' ? '수익' : '배달 건수'} 추이</h3>
           <ResponsiveContainer width="100%" height={200}>
             {period === 'year' ? (
@@ -484,21 +567,20 @@ export default function App() {
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => viewType === 'amount' ? formatShortMoney(v) : v} />
                 <Tooltip formatter={(v) => viewType === 'amount' ? formatMoney(v) : `${v}건`} />
-                <Line type="monotone" dataKey={viewType === 'amount' ? '합계' : '총건수'} stroke="#8B5CF6" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey={viewType === 'amount' ? '합계' : '총건수'} stroke="#EAB308" strokeWidth={2} dot={false} />
               </LineChart>
             )}
           </ResponsiveContainer>
         </div>
 
-        {/* 날짜별 상세 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm mb-6">
+        <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
           <h3 className="font-semibold text-gray-800 mb-4">📋 {period === 'year' ? '월별' : '일별'} 상세</h3>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {(period === 'year' ? monthlyData : dailyData).slice().reverse().map((item, idx) => (
               <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                 <span className="font-medium text-gray-700">{item.date}</span>
                 <div className="text-right">
-                  <p className="font-bold text-blue-600">{formatMoney(item.합계)}</p>
+                  <p className="font-bold text-yellow-600">{formatMoney(item.합계)}</p>
                   <p className="text-xs text-gray-400">{item.총건수}건</p>
                 </div>
               </div>
@@ -547,7 +629,7 @@ export default function App() {
     const getDayTotal = (day) => getDateRecords(day).reduce((s, r) => s + r.amount, 0);
     const getDayCount = (day) => getDateRecords(day).reduce((s, r) => s + (r.deliveryCount || 1), 0);
     const getMonthTotal = () => records.filter(r => { const d = new Date(r.date); return d.getFullYear() === year && d.getMonth() === month; }).reduce((s, r) => s + r.amount, 0);
-    const getColorIntensity = (amt) => amt === 0 ? 'bg-gray-50' : amt < 50000 ? 'bg-green-100' : amt < 100000 ? 'bg-green-200' : amt < 150000 ? 'bg-green-300' : amt < 200000 ? 'bg-green-400' : 'bg-green-500';
+    const getColorIntensity = (amt) => amt === 0 ? 'bg-gray-50' : amt < 50000 ? 'bg-yellow-100' : amt < 100000 ? 'bg-yellow-200' : amt < 150000 ? 'bg-yellow-300' : amt < 200000 ? 'bg-yellow-400' : 'bg-yellow-500';
 
     const days = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
     const selectedRecords = selectedDate ? getDateRecords(selectedDate) : [];
@@ -562,7 +644,13 @@ export default function App() {
           </div>
           <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))} className="p-2"><ChevronRight className="w-5 h-5" /></button>
         </div>
-        <button onClick={() => setCurrentMonth(new Date())} className="mx-auto block px-4 py-1 text-sm bg-blue-100 text-blue-600 rounded-full mb-4">오늘</button>
+        <button onClick={() => setCurrentMonth(new Date())} className="mx-auto block px-4 py-1 text-sm bg-yellow-100 text-yellow-700 rounded-full mb-4">오늘</button>
+        
+        {/* 광고 배너 */}
+        <div className="mb-4">
+          <AdBanner />
+        </div>
+
         <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
           <div className="grid grid-cols-7 gap-1 mb-2">
             {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
@@ -573,12 +661,12 @@ export default function App() {
             {days.map((day, idx) => {
               if (!day) return <div key={idx} className="aspect-square" />;
               const total = getDayTotal(day);
-              const isToday = new Date().toISOString().split('T')[0] === `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const isTodayDate = new Date().toISOString().split('T')[0] === `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
               const dayOfWeek = (firstDay + day - 1) % 7;
               return (
-                <button key={day} onClick={() => setSelectedDate(selectedDate === day ? null : day)} className={`aspect-square rounded-lg flex flex-col items-center justify-center ${getColorIntensity(total)} ${selectedDate === day ? 'ring-2 ring-blue-500' : ''} ${isToday ? 'ring-2 ring-orange-400' : ''}`}>
-                  <span className={`text-sm font-medium ${dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-700'} ${total > 150000 ? 'text-white' : ''}`}>{day}</span>
-                  {total > 0 && <span className={`text-xs ${total > 150000 ? 'text-white/90' : 'text-gray-600'}`}>{formatShortMoney(total)}</span>}
+                <button key={day} onClick={() => setSelectedDate(selectedDate === day ? null : day)} className={`aspect-square rounded-lg flex flex-col items-center justify-center ${getColorIntensity(total)} ${selectedDate === day ? 'ring-2 ring-yellow-500' : ''} ${isTodayDate ? 'ring-2 ring-orange-400' : ''}`}>
+                  <span className={`text-sm font-medium ${dayOfWeek === 0 ? 'text-red-500' : dayOfWeek === 6 ? 'text-blue-500' : 'text-gray-700'} ${total > 150000 ? 'text-gray-900' : ''}`}>{day}</span>
+                  {total > 0 && <span className={`text-xs ${total > 150000 ? 'text-gray-700' : 'text-gray-600'}`}>{formatShortMoney(total)}</span>}
                 </button>
               );
             })}
@@ -588,11 +676,11 @@ export default function App() {
           <p className="text-xs text-gray-500 mb-2">수익 범례</p>
           <div className="flex justify-between text-xs text-gray-500">
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-50 border"></span>0</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-100"></span>~5만</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-200"></span>~10만</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-300"></span>~15만</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-400"></span>~20만</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500"></span>20만+</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-100"></span>~5만</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-200"></span>~10만</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-300"></span>~15만</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-400"></span>~20만</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-500"></span>20만+</span>
           </div>
         </div>
         {selectedDate && (
@@ -600,7 +688,7 @@ export default function App() {
             <div className="flex justify-between items-center mb-3">
               <h3 className="font-semibold text-gray-800">{month + 1}월 {selectedDate}일</h3>
               <div className="text-right">
-                <p className="text-lg font-bold text-blue-500">{formatMoney(getDayTotal(selectedDate))}</p>
+                <p className="text-lg font-bold text-yellow-600">{formatMoney(getDayTotal(selectedDate))}</p>
                 <p className="text-xs text-gray-400">{getDayCount(selectedDate)}건</p>
               </div>
             </div>
@@ -646,8 +734,14 @@ export default function App() {
       <div className="p-4 pb-24">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-800">수익 기록</h2>
-          <button onClick={() => openInputModal()} className="bg-blue-500 text-white p-2 rounded-full"><Plus className="w-5 h-5" /></button>
+          <button onClick={() => openInputModal()} className="bg-yellow-500 text-gray-900 p-2 rounded-full"><Plus className="w-5 h-5" /></button>
         </div>
+
+        {/* 광고 배너 */}
+        <div className="mb-4">
+          <AdBanner />
+        </div>
+
         {Object.keys(grouped).length === 0 ? (
           <div className="text-center py-12 text-gray-400"><Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" /><p>아직 기록이 없습니다</p></div>
         ) : (
@@ -683,14 +777,24 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
+      {/* 상단 헤더 - 달돈 로고 */}
       <header className="bg-white px-4 py-4 shadow-sm sticky top-0 z-10">
-        <h1 className="text-xl font-bold text-gray-800">
-          {activeTab === 'home' && '배달 수익 관리'}
-          {activeTab === 'stats' && '수익 통계'}
-          {activeTab === 'calendar' && '달력'}
-          {activeTab === 'records' && '수익 기록'}
-        </h1>
+        <div className="flex items-center justify-between">
+          <Logo />
+          {activeTab === 'home' && (
+            <span className="text-sm text-gray-500">배달 수익 관리</span>
+          )}
+          {activeTab === 'stats' && (
+            <span className="text-sm text-gray-500">수익 통계</span>
+          )}
+          {activeTab === 'calendar' && (
+            <span className="text-sm text-gray-500">달력</span>
+          )}
+          {activeTab === 'records' && (
+            <span className="text-sm text-gray-500">기록</span>
+          )}
+        </div>
       </header>
       <main>
         {activeTab === 'home' && <HomeScreen />}
@@ -700,7 +804,7 @@ export default function App() {
       </main>
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 flex justify-around safe-area-bottom">
         {[{ key: 'home', icon: TrendingUp, label: '홈' }, { key: 'stats', icon: BarChart3, label: '통계' }, { key: 'calendar', icon: CalendarDays, label: '달력' }, { key: 'records', icon: Calendar, label: '기록' }].map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex flex-col items-center gap-1 ${activeTab === tab.key ? 'text-blue-500' : 'text-gray-400'}`}>
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex flex-col items-center gap-1 ${activeTab === tab.key ? 'text-yellow-500' : 'text-gray-400'}`}>
             <tab.icon className="w-6 h-6" /><span className="text-xs">{tab.label}</span>
           </button>
         ))}

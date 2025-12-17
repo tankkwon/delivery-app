@@ -4,33 +4,36 @@ import { Plus, TrendingUp, Calendar, Truck, Package, ChevronLeft, ChevronRight, 
 
 // 쿠팡파트너스 광고 컴포넌트
 const CoupangAd = () => {
+  const containerRef = React.useRef(null);
+  
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://ads-partners.coupang.com/g.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    script.onload = () => {
-      if (window.PartnersCoupang) {
-        new window.PartnersCoupang.G({
-          id: 951405,
-          template: "carousel",
-          trackingCode: "AF8746998",
-          width: "320",
-          height: "100",
-          tsource: ""
-        });
-      }
-    };
-
-    return () => {
-      document.body.removeChild(script);
-    };
+    if (containerRef.current) {
+      containerRef.current.innerHTML = '';
+      
+      const scriptTag1 = document.createElement('script');
+      scriptTag1.src = 'https://ads-partners.coupang.com/g.js';
+      scriptTag1.async = true;
+      containerRef.current.appendChild(scriptTag1);
+      
+      scriptTag1.onload = () => {
+        if (window.PartnersCoupang) {
+          new window.PartnersCoupang.G({
+            id: 951405,
+            template: "carousel",
+            trackingCode: "AF8746998",
+            width: "320",
+            height: "100",
+            tsource: ""
+          });
+        }
+      };
+    }
   }, []);
 
   return (
-    <div className="flex justify-center my-3">
-      <div id="coupang-ad" className="coupang-ad-container"></div>
+    <div className="bg-white rounded-xl p-2 shadow-sm">
+      <p className="text-xs text-gray-400 text-center mb-1">광고</p>
+      <div ref={containerRef} className="flex justify-center" style={{ minHeight: '100px' }}></div>
     </div>
   );
 };

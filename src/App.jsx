@@ -1,6 +1,114 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Plus, TrendingUp, Calendar, Truck, Package, ChevronLeft, ChevronRight, X, Trash2, Wallet, CalendarDays } from 'lucide-react';
+import { Plus, TrendingUp, Calendar, Truck, Package, ChevronLeft, ChevronRight, X, Trash2, Wallet, CalendarDays, BarChart3 } from 'lucide-react';
+
+// 입력 모달을 별도 컴포넌트로 분리 (키보드 문제 해결)
+const InputModal = ({ isOpen, onClose, onSave, initialDate }) => {
+  const [date, setDate] = useState(initialDate || new Date().toISOString().split('T')[0]);
+  const [platform, setPlatform] = useState('coupang');
+  const [amount, setAmount] = useState('');
+
+  const COLORS = { coupang: '#00A0E0', baemin: '#2DC6C6', other: '#9333EA' };
+  const PLATFORM_NAMES = { coupang: '쿠팡이츠', baemin: '배민커넥트', other: '기타' };
+
+  useEffect(() => {
+    if (isOpen) {
+      setDate(initialDate || new Date().toISOString().split('T')[0]);
+      setPlatform('coupang');
+      setAmount('');
+    }
+  }, [isOpen, initialDate]);
+
+  const handleSave = () => {
+    if (amount) {
+      onSave({ date, platform, amount: parseInt(amount), memo: '' });
+      onClose();
+    }
+  };
+
+  const PlatformIcon = ({ p }) => {
+    if (p === 'coupang') return <Package className="w-5 h-5" style={{ color: COLORS.coupang }} />;
+    if (p === 'baemin') return <Truck className="w-5 h-5" style={{ color: COLORS.baemin }} />;
+    return <Wallet className="w-5 h-5" style={{ color: COLORS.other }} />;
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black/50 flex items-end justify-center z-50"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div 
+        className="bg-white w-full max-w-lg rounded-t-3xl p-6 animate-slide-up"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-bold">수익 입력</h3>
+          <button onClick={onClose} className="p-2"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-600 mb-2">날짜</label>
+            <input 
+              type="date" 
+              value={date} 
+              onChange={(e) => setDate(e.target.value)} 
+              className="w-full p-3 border border-gray-200 rounded-xl text-base"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-2">플랫폼</label>
+            <div className="grid grid-cols-3 gap-3">
+              {['coupang', 'baemin', 'other'].map(p => (
+                <button 
+                  key={p} 
+                  type="button"
+                  onClick={() => setPlatform(p)} 
+                  className={`p-3 rounded-xl border-2 ${platform === p ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                >
+                  <div className="flex flex-col items-center gap-1">
+                    <PlatformIcon p={p} />
+                    <span className="text-sm">{PLATFORM_NAMES[p]}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-2">금액</label>
+            <input 
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={amount} 
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9]/g, '');
+                setAmount(val);
+              }}
+              placeholder="0" 
+              className="w-full p-3 border border-gray-200 rounded-xl text-2xl font-bold text-right"
+              autoComplete="off"
+            />
+            {amount && (
+              <p className="text-right text-sm text-gray-500 mt-1">
+                {new Intl.NumberFormat('ko-KR').format(parseInt(amount))}원
+              </p>
+            )}
+          </div>
+          <button 
+            type="button"
+            onClick={handleSave} 
+            disabled={!amount}
+            className={`w-full p-4 rounded-xl font-semibold ${amount ? 'bg-blue-500 text-white active:bg-blue-600' : 'bg-gray-200 text-gray-400'}`}
+          >
+            저장하기
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
@@ -11,7 +119,7 @@ export default function App() {
   });
   
   const [showInputModal, setShowInputModal] = useState(false);
-  const [inputData, setInputData] = useState({ date: new Date().toISOString().split('T')[0], platform: 'coupang', amount: '', memo: '' });
+  const [inputDate, setInputDate] = useState(null);
 
   const COLORS = { coupang: '#00A0E0', baemin: '#2DC6C6', other: '#9333EA' };
   const PLATFORM_NAMES = { coupang: '쿠팡이츠', baemin: '배민커넥트', other: '기타' };
@@ -21,7 +129,7 @@ export default function App() {
   };
 
   const saveRecord = (data) => {
-    const newRecords = [...records, { id: Date.now(), ...data, amount: parseInt(data.amount) }];
+    const newRecords = [...records, { id: Date.now(), ...data }];
     setRecords(newRecords);
     saveToStorage(newRecords);
   };
@@ -30,6 +138,11 @@ export default function App() {
     const newRecords = records.filter(r => r.id !== id);
     setRecords(newRecords);
     saveToStorage(newRecords);
+  };
+
+  const openInputModal = (date = null) => {
+    setInputDate(date);
+    setShowInputModal(true);
   };
 
   const getStats = (period = 'all', platform = 'all') => {
@@ -85,7 +198,6 @@ export default function App() {
 
   const formatMoney = (amount) => new Intl.NumberFormat('ko-KR').format(amount) + '원';
   
-  // 소수점 포함 만원 단위 (1.5만 형식)
   const formatShortMoney = (amount) => {
     if (amount === 0) return '0';
     const man = amount / 10000;
@@ -119,9 +231,8 @@ export default function App() {
           </div>
         </div>
         
-        {/* 수익 입력 버튼 - 하나로 통합 */}
         <button 
-          onClick={() => setShowInputModal(true)} 
+          onClick={() => openInputModal()} 
           className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white rounded-xl p-4 mb-6 font-semibold shadow-lg active:bg-blue-600"
         >
           <Plus className="w-5 h-5" />
@@ -255,6 +366,11 @@ export default function App() {
     const days = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
     const selectedRecords = selectedDate ? getDateRecords(selectedDate) : [];
 
+    const handleAddRecord = () => {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}`;
+      openInputModal(dateStr);
+    };
+
     return (
       <div className="p-4 pb-24">
         <div className="flex items-center justify-between mb-4">
@@ -317,7 +433,7 @@ export default function App() {
                 ))}
               </div>
             )}
-            <button onClick={() => { setInputData({ ...inputData, date: `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}` }); setShowInputModal(true); }} className="w-full mt-3 py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 flex items-center justify-center gap-2">
+            <button onClick={handleAddRecord} className="w-full mt-3 py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 flex items-center justify-center gap-2">
               <Plus className="w-4 h-4" />이 날짜에 추가
             </button>
           </div>
@@ -343,7 +459,7 @@ export default function App() {
       <div className="p-4 pb-24">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-800">수익 기록</h2>
-          <button onClick={() => setShowInputModal(true)} className="bg-blue-500 text-white p-2 rounded-full"><Plus className="w-5 h-5" /></button>
+          <button onClick={() => openInputModal()} className="bg-blue-500 text-white p-2 rounded-full"><Plus className="w-5 h-5" /></button>
         </div>
         {Object.keys(grouped).length === 0 ? (
           <div className="text-center py-12 text-gray-400"><Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" /><p>아직 기록이 없습니다</p><p className="text-sm mt-1">위의 + 버튼을 눌러 수익을 입력해보세요!</p></div>
@@ -373,90 +489,6 @@ export default function App() {
     );
   };
 
-  // 수익 입력 모달 - 키보드 문제 수정
-  const InputModal = () => {
-    const handleBackdropClick = (e) => {
-      // 배경 클릭시에만 닫기 (모달 내부 클릭은 무시)
-      if (e.target === e.currentTarget) {
-        setShowInputModal(false);
-      }
-    };
-
-    const handleSave = () => {
-      if (inputData.amount) {
-        saveRecord(inputData);
-        setShowInputModal(false);
-        setInputData({ date: new Date().toISOString().split('T')[0], platform: 'coupang', amount: '', memo: '' });
-      }
-    };
-
-    return (
-      <div 
-        className="fixed inset-0 bg-black/50 flex items-end justify-center z-50" 
-        onClick={handleBackdropClick}
-      >
-        <div 
-          className="bg-white w-full max-w-lg rounded-t-3xl p-6 animate-slide-up"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold">수익 입력</h3>
-            <button onClick={() => setShowInputModal(false)} className="p-2"><X className="w-5 h-5" /></button>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-gray-600 mb-2">날짜</label>
-              <input 
-                type="date" 
-                value={inputData.date} 
-                onChange={(e) => setInputData({ ...inputData, date: e.target.value })} 
-                className="w-full p-3 border border-gray-200 rounded-xl text-base"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-600 mb-2">플랫폼</label>
-              <div className="grid grid-cols-3 gap-3">
-                {['coupang', 'baemin', 'other'].map(p => (
-                  <button 
-                    key={p} 
-                    type="button"
-                    onClick={() => setInputData({ ...inputData, platform: p })} 
-                    className={`p-3 rounded-xl border-2 ${inputData.platform === p ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
-                  >
-                    <div className="flex flex-col items-center gap-1">
-                      <PlatformIcon platform={p} />
-                      <span className="text-sm">{PLATFORM_NAMES[p]}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm text-gray-600 mb-2">금액</label>
-              <input 
-                type="number" 
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={inputData.amount} 
-                onChange={(e) => setInputData({ ...inputData, amount: e.target.value })} 
-                placeholder="0" 
-                className="w-full p-3 border border-gray-200 rounded-xl text-2xl font-bold text-right"
-                onFocus={(e) => e.target.select()}
-              />
-            </div>
-            <button 
-              type="button"
-              onClick={handleSave} 
-              className="w-full bg-blue-500 text-white p-4 rounded-xl font-semibold active:bg-blue-600"
-            >
-              저장하기
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white px-4 py-4 shadow-sm sticky top-0 z-10">
@@ -474,13 +506,20 @@ export default function App() {
         {activeTab === 'records' && <RecordsScreen />}
       </main>
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 flex justify-around safe-area-bottom">
-        {[{ key: 'home', icon: TrendingUp, label: '홈' }, { key: 'stats', icon: BarChart, label: '통계' }, { key: 'calendar', icon: CalendarDays, label: '달력' }, { key: 'records', icon: Calendar, label: '기록' }].map(tab => (
+        {[{ key: 'home', icon: TrendingUp, label: '홈' }, { key: 'stats', icon: BarChart3, label: '통계' }, { key: 'calendar', icon: CalendarDays, label: '달력' }, { key: 'records', icon: Calendar, label: '기록' }].map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex flex-col items-center gap-1 ${activeTab === tab.key ? 'text-blue-500' : 'text-gray-400'}`}>
             <tab.icon className="w-6 h-6" /><span className="text-xs">{tab.label}</span>
           </button>
         ))}
       </nav>
-      {showInputModal && <InputModal />}
+      
+      <InputModal 
+        isOpen={showInputModal}
+        onClose={() => setShowInputModal(false)}
+        onSave={saveRecord}
+        initialDate={inputDate}
+      />
+      
       <style>{`
         @keyframes slide-up {
           from { transform: translateY(100%); }
@@ -488,14 +527,6 @@ export default function App() {
         }
         .animate-slide-up { animation: slide-up 0.3s ease-out; }
         .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 12px); }
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        input[type="number"] {
-          -moz-appearance: textfield;
-        }
       `}</style>
     </div>
   );

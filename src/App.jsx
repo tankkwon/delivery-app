@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Plus, TrendingUp, Calendar, Truck, Package, ChevronLeft, ChevronRight, X, Trash2, Wallet, CalendarDays, BarChart3, UtensilsCrossed, Target, Settings, Moon } from 'lucide-react';
+import { Plus, TrendingUp, Calendar, Truck, Package, ChevronLeft, ChevronRight, X, Trash2, Wallet, CalendarDays, BarChart3, UtensilsCrossed, Target, Settings, Moon, Download, Upload, AlertTriangle } from 'lucide-react';
 
 // 쿠팡파트너스 광고 컴포넌트
 const CoupangAd = () => {
@@ -1067,24 +1067,187 @@ export default function App() {
     );
   };
 
+  // 설정 모달
+  const SettingsModal = ({ isOpen, onClose }) => {
+    const fileInputRef = React.useRef(null);
+    const [importStatus, setImportStatus] = useState('');
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+    // 데이터 내보내기
+    const exportData = () => {
+      const exportObj = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        records: records,
+        monthlyGoal: monthlyGoal
+      };
+      
+      const dataStr = JSON.stringify(exportObj, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const today = new Date();
+      const fileName = `daldon_backup_${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}.json`;
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      setImportStatus('✅ 백업 파일이 다운로드되었습니다!');
+      setTimeout(() => setImportStatus(''), 3000);
+    };
+
+    // 데이터 가져오기
+    const importData = (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importObj = JSON.parse(e.target.result);
+          
+          if (importObj.records && Array.isArray(importObj.records)) {
+            setRecords(importObj.records);
+            localStorage.setItem('deliveryRecords', JSON.stringify(importObj.records));
+            
+            if (importObj.monthlyGoal) {
+              setMonthlyGoal(importObj.monthlyGoal);
+              localStorage.setItem('monthlyGoal', importObj.monthlyGoal.toString());
+            }
+            
+            setImportStatus(`✅ ${importObj.records.length}개의 기록을 복원했습니다!`);
+          } else {
+            setImportStatus('❌ 올바른 백업 파일이 아닙니다.');
+          }
+        } catch (error) {
+          setImportStatus('❌ 파일을 읽는 중 오류가 발생했습니다.');
+        }
+        setTimeout(() => setImportStatus(''), 3000);
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    };
+
+    // 데이터 초기화
+    const resetData = () => {
+      setRecords([]);
+      setMonthlyGoal(0);
+      localStorage.removeItem('deliveryRecords');
+      localStorage.removeItem('monthlyGoal');
+      setShowResetConfirm(false);
+      setImportStatus('✅ 모든 데이터가 초기화되었습니다.');
+      setTimeout(() => setImportStatus(''), 3000);
+    };
+
+    if (!isOpen) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+        <div className="bg-white w-11/12 max-w-sm rounded-2xl p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold">⚙️ 설정</h3>
+            <button onClick={onClose} className="p-2"><X className="w-5 h-5" /></button>
+          </div>
+
+          <div className="space-y-3">
+            {/* 데이터 내보내기 */}
+            <button 
+              onClick={exportData}
+              className="w-full flex items-center gap-3 p-4 bg-blue-50 rounded-xl text-left hover:bg-blue-100 transition-colors"
+            >
+              <Download className="w-6 h-6 text-blue-500" />
+              <div>
+                <p className="font-semibold text-gray-800">📤 데이터 내보내기</p>
+                <p className="text-xs text-gray-500">백업 파일로 저장하기</p>
+              </div>
+            </button>
+
+            {/* 데이터 가져오기 */}
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full flex items-center gap-3 p-4 bg-green-50 rounded-xl text-left hover:bg-green-100 transition-colors"
+            >
+              <Upload className="w-6 h-6 text-green-500" />
+              <div>
+                <p className="font-semibold text-gray-800">📥 데이터 가져오기</p>
+                <p className="text-xs text-gray-500">백업 파일에서 복원하기</p>
+              </div>
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={importData} 
+              accept=".json" 
+              className="hidden" 
+            />
+
+            {/* 데이터 초기화 */}
+            <button 
+              onClick={() => setShowResetConfirm(true)}
+              className="w-full flex items-center gap-3 p-4 bg-red-50 rounded-xl text-left hover:bg-red-100 transition-colors"
+            >
+              <AlertTriangle className="w-6 h-6 text-red-500" />
+              <div>
+                <p className="font-semibold text-gray-800">🗑️ 데이터 초기화</p>
+                <p className="text-xs text-gray-500">모든 기록 삭제하기</p>
+              </div>
+            </button>
+          </div>
+
+          {/* 상태 메시지 */}
+          {importStatus && (
+            <div className="mt-4 p-3 bg-gray-100 rounded-xl text-center text-sm">
+              {importStatus}
+            </div>
+          )}
+
+          {/* 초기화 확인 */}
+          {showResetConfirm && (
+            <div className="mt-4 p-4 bg-red-50 rounded-xl">
+              <p className="text-sm text-red-700 mb-3">⚠️ 정말 모든 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setShowResetConfirm(false)}
+                  className="flex-1 py-2 bg-gray-200 rounded-lg text-gray-700"
+                >
+                  취소
+                </button>
+                <button 
+                  onClick={resetData}
+                  className="flex-1 py-2 bg-red-500 rounded-lg text-white"
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 앱 정보 */}
+          <div className="mt-6 pt-4 border-t border-gray-200 text-center text-xs text-gray-400">
+            <p>달돈 v1.0</p>
+            <p>배달 수익 관리 앱</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* 상단 헤더 - 달돈 로고 */}
       <header className="bg-white px-4 py-4 shadow-sm sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <Logo />
-          {activeTab === 'home' && (
-            <span className="text-sm text-gray-500">배달 수익 관리</span>
-          )}
-          {activeTab === 'stats' && (
-            <span className="text-sm text-gray-500">수익 통계</span>
-          )}
-          {activeTab === 'calendar' && (
-            <span className="text-sm text-gray-500">달력</span>
-          )}
-          {activeTab === 'records' && (
-            <span className="text-sm text-gray-500">기록</span>
-          )}
+          <button onClick={() => setShowSettingsModal(true)} className="p-2 text-gray-500 hover:text-gray-700">
+            <Settings className="w-5 h-5" />
+          </button>
         </div>
       </header>
       <main>
@@ -1103,6 +1266,7 @@ export default function App() {
       
       <InputModal isOpen={showInputModal} onClose={() => setShowInputModal(false)} onSave={saveRecord} initialDate={inputDate} />
       <GoalModal isOpen={showGoalModal} onClose={() => setShowGoalModal(false)} currentGoal={monthlyGoal} onSave={saveGoal} />
+      <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
       
       <style>{`
         @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }

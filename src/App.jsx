@@ -305,6 +305,109 @@ export default function App() {
     return { total, count: filtered.length, totalDeliveries: totalCount, avg: totalCount > 0 ? Math.round(total / totalCount) : 0 };
   };
 
+  // 이번 주 (월요일~일요일) 데이터
+  const getWeekData = () => {
+    const data = [];
+    const today = new Date();
+    // 이번 주 월요일 구하기 (일요일이면 -6, 아니면 -(요일-1))
+    const dayOfWeek = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+    
+    const dayNames = ['월', '화', '수', '목', '금', '토', '일'];
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayRecords = records.filter(r => r.date === dateStr);
+      const coupang = dayRecords.filter(r => r.platform === 'coupang').reduce((s, r) => s + r.amount, 0);
+      const baemin = dayRecords.filter(r => r.platform === 'baemin').reduce((s, r) => s + r.amount, 0);
+      const yogiyo = dayRecords.filter(r => r.platform === 'yogiyo').reduce((s, r) => s + r.amount, 0);
+      const other = dayRecords.filter(r => r.platform === 'other').reduce((s, r) => s + r.amount, 0);
+      const coupangCount = dayRecords.filter(r => r.platform === 'coupang').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+      const baeminCount = dayRecords.filter(r => r.platform === 'baemin').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+      const yogiyoCount = dayRecords.filter(r => r.platform === 'yogiyo').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+      const otherCount = dayRecords.filter(r => r.platform === 'other').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+      data.push({
+        date: `${dayNames[i]}(${date.getDate()})`,
+        쿠팡이츠: coupang, 배민커넥트: baemin, 요기요: yogiyo, 기타: other,
+        쿠팡건수: coupangCount, 배민건수: baeminCount, 요기요건수: yogiyoCount, 기타건수: otherCount,
+        합계: coupang + baemin + yogiyo + other,
+        총건수: coupangCount + baeminCount + yogiyoCount + otherCount,
+      });
+    }
+    return data;
+  };
+
+  // 이번 달 (1일~말일) 데이터
+  const getThisMonthDailyData = () => {
+    const data = [];
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayRecords = records.filter(r => r.date === dateStr);
+      const coupang = dayRecords.filter(r => r.platform === 'coupang').reduce((s, r) => s + r.amount, 0);
+      const baemin = dayRecords.filter(r => r.platform === 'baemin').reduce((s, r) => s + r.amount, 0);
+      const yogiyo = dayRecords.filter(r => r.platform === 'yogiyo').reduce((s, r) => s + r.amount, 0);
+      const other = dayRecords.filter(r => r.platform === 'other').reduce((s, r) => s + r.amount, 0);
+      const coupangCount = dayRecords.filter(r => r.platform === 'coupang').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+      const baeminCount = dayRecords.filter(r => r.platform === 'baemin').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+      const yogiyoCount = dayRecords.filter(r => r.platform === 'yogiyo').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+      const otherCount = dayRecords.filter(r => r.platform === 'other').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+      data.push({
+        date: `${day}일`,
+        쿠팡이츠: coupang, 배민커넥트: baemin, 요기요: yogiyo, 기타: other,
+        쿠팡건수: coupangCount, 배민건수: baeminCount, 요기요건수: yogiyoCount, 기타건수: otherCount,
+        합계: coupang + baemin + yogiyo + other,
+        총건수: coupangCount + baeminCount + yogiyoCount + otherCount,
+      });
+    }
+    return data;
+  };
+
+  // 이번 주 통계 (월~일)
+  const getWeekStats = (platform = 'all') => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+    monday.setHours(0, 0, 0, 0);
+    
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    
+    let filtered = records.filter(r => {
+      const d = new Date(r.date);
+      return d >= monday && d <= sunday;
+    });
+    
+    if (platform !== 'all') filtered = filtered.filter(r => r.platform === platform);
+    const total = filtered.reduce((sum, r) => sum + r.amount, 0);
+    const totalCount = filtered.reduce((sum, r) => sum + (r.deliveryCount || 1), 0);
+    return { total, count: filtered.length, totalDeliveries: totalCount, avg: totalCount > 0 ? Math.round(total / totalCount) : 0 };
+  };
+
+  // 이번 달 통계 (1일~말일)
+  const getThisMonthStats = (platform = 'all') => {
+    const today = new Date();
+    let filtered = records.filter(r => {
+      const d = new Date(r.date);
+      return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
+    });
+    
+    if (platform !== 'all') filtered = filtered.filter(r => r.platform === platform);
+    const total = filtered.reduce((sum, r) => sum + r.amount, 0);
+    const totalCount = filtered.reduce((sum, r) => sum + (r.deliveryCount || 1), 0);
+    return { total, count: filtered.length, totalDeliveries: totalCount, avg: totalCount > 0 ? Math.round(total / totalCount) : 0 };
+  };
+
   const getDailyData = (days = 7) => {
     const data = [];
     const today = new Date();
@@ -387,16 +490,49 @@ export default function App() {
 
   // 홈 화면
   const HomeScreen = () => {
-    const weekStats = getStats('week');
-    const thisMonthStats = getStats('thisMonth');
+    const [selectedMonth, setSelectedMonth] = useState(new Date());
+    const weekStats = getWeekStats();
+    const thisMonthStats = getThisMonthStats();
     const progress = getThisMonthProgress();
     
-    // 이번달 플랫폼별 통계
-    const getThisMonthPlatformStats = (platform) => {
+    // 선택된 월 이동
+    const goToPrevMonth = () => {
+      const newDate = new Date(selectedMonth);
+      newDate.setMonth(newDate.getMonth() - 1);
+      setSelectedMonth(newDate);
+    };
+    
+    const goToNextMonth = () => {
+      const newDate = new Date(selectedMonth);
+      newDate.setMonth(newDate.getMonth() + 1);
+      setSelectedMonth(newDate);
+    };
+    
+    const goToThisMonth = () => {
+      setSelectedMonth(new Date());
+    };
+    
+    const isThisMonth = () => {
       const today = new Date();
+      return selectedMonth.getFullYear() === today.getFullYear() && selectedMonth.getMonth() === today.getMonth();
+    };
+    
+    // 선택된 월의 통계
+    const getSelectedMonthStats = () => {
       const monthRecords = records.filter(r => { 
         const d = new Date(r.date); 
-        return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && r.platform === platform; 
+        return d.getFullYear() === selectedMonth.getFullYear() && d.getMonth() === selectedMonth.getMonth(); 
+      });
+      const total = monthRecords.reduce((s, r) => s + r.amount, 0);
+      const totalDeliveries = monthRecords.reduce((s, r) => s + (r.deliveryCount || 1), 0);
+      return { total, totalDeliveries };
+    };
+    
+    // 선택된 월의 플랫폼별 통계
+    const getSelectedMonthPlatformStats = (platform) => {
+      const monthRecords = records.filter(r => { 
+        const d = new Date(r.date); 
+        return d.getFullYear() === selectedMonth.getFullYear() && d.getMonth() === selectedMonth.getMonth() && r.platform === platform; 
       });
       return {
         amount: monthRecords.reduce((s, r) => s + r.amount, 0),
@@ -404,19 +540,35 @@ export default function App() {
       };
     };
     
-    const coupangStats = getThisMonthPlatformStats('coupang');
-    const baeminStats = getThisMonthPlatformStats('baemin');
-    const yogiyoStats = getThisMonthPlatformStats('yogiyo');
-    const otherStats = getThisMonthPlatformStats('other');
+    const selectedMonthStats = getSelectedMonthStats();
+    const coupangStats = getSelectedMonthPlatformStats('coupang');
+    const baeminStats = getSelectedMonthPlatformStats('baemin');
+    const yogiyoStats = getSelectedMonthPlatformStats('yogiyo');
+    const otherStats = getSelectedMonthPlatformStats('other');
 
     return (
       <div className="p-4 pb-24">
         {/* 월별 수익 요약 카드 */}
         <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-5 text-white mb-4 shadow-lg">
+          {/* 월 네비게이션 */}
+          <div className="flex items-center justify-between mb-3">
+            <button onClick={goToPrevMonth} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <div className="text-center">
+              <p className="text-yellow-400 font-medium">📅 {selectedMonth.getFullYear()}년 {selectedMonth.getMonth() + 1}월</p>
+              {!isThisMonth() && (
+                <button onClick={goToThisMonth} className="text-xs text-gray-400 underline mt-1">이번달로 이동</button>
+              )}
+            </div>
+            <button onClick={goToNextMonth} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+          
           <div className="text-center mb-3">
-            <p className="text-gray-400 text-sm">📅 {new Date().getMonth() + 1}월 총 수익</p>
-            <p className="text-3xl font-bold text-yellow-400 my-2">{formatMoney(thisMonthStats.total)}</p>
-            <p className="text-gray-400 text-sm">🚚 {thisMonthStats.totalDeliveries}건 배달</p>
+            <p className="text-3xl font-bold text-yellow-400 my-2">{formatMoney(selectedMonthStats.total)}</p>
+            <p className="text-gray-400 text-sm">🚚 {selectedMonthStats.totalDeliveries}건 배달</p>
           </div>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="bg-white/10 rounded-lg p-2">
@@ -535,13 +687,34 @@ export default function App() {
 
   // 통계 화면
   const StatsScreen = () => {
-    const [period, setPeriod] = useState('month');
+    const [period, setPeriod] = useState('week');
     const [platform, setPlatform] = useState('all');
     const [viewType, setViewType] = useState('amount');
-    const stats = getStats(period, platform);
-    const dailyData = getDailyData(period === 'week' ? 7 : 30);
-    const monthlyData = getMonthlyData();
+    
+    // 기간별 통계
+    const stats = period === 'week' ? getWeekStats(platform) : period === 'month' ? getThisMonthStats(platform) : getStats('year', platform);
+    
+    // 기간별 데이터
+    const weekData = getWeekData();
+    const monthData = getThisMonthDailyData();
+    const yearData = getMonthlyData();
     const ratio = getPlatformRatio();
+    
+    // 기간 텍스트
+    const getPeriodText = () => {
+      const today = new Date();
+      if (period === 'week') {
+        const dayOfWeek = today.getDay();
+        const monday = new Date(today);
+        monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        return `${monday.getMonth() + 1}/${monday.getDate()} ~ ${sunday.getMonth() + 1}/${sunday.getDate()} (이번 주)`;
+      } else if (period === 'month') {
+        return `${today.getFullYear()}년 ${today.getMonth() + 1}월`;
+      }
+      return '최근 1년';
+    };
 
     return (
       <div className="p-4 pb-24">
@@ -568,7 +741,7 @@ export default function App() {
         </div>
 
         <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-4 mb-4 text-white">
-          <p className="text-gray-400 text-sm mb-1">{period === 'week' ? '최근 7일' : period === 'month' ? '최근 30일' : '최근 1년'}{platform !== 'all' && ` · ${PLATFORM_NAMES[platform]}`}</p>
+          <p className="text-gray-400 text-sm mb-1">{getPeriodText()}{platform !== 'all' && ` · ${PLATFORM_NAMES[platform]}`}</p>
           {viewType === 'amount' ? (
             <>
               <p className="text-3xl font-bold text-yellow-400 mb-3">{formatMoney(stats.total)}</p>
@@ -594,10 +767,10 @@ export default function App() {
         </div>
 
         <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
-          <h3 className="font-semibold text-gray-800 mb-4">{period === 'year' ? '월별' : '일별'} {viewType === 'amount' ? '수익' : '배달 건수'} 추이</h3>
+          <h3 className="font-semibold text-gray-800 mb-4">{period === 'year' ? '월별' : period === 'month' ? '일별' : '요일별'} {viewType === 'amount' ? '수익' : '배달 건수'} 추이</h3>
           <ResponsiveContainer width="100%" height={200}>
             {period === 'year' ? (
-              <BarChart data={monthlyData}>
+              <BarChart data={yearData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => viewType === 'amount' ? formatShortMoney(v) : v} />
@@ -619,21 +792,35 @@ export default function App() {
                 )}
               </BarChart>
             ) : (
-              <LineChart data={dailyData}>
+              <BarChart data={period === 'week' ? weekData : monthData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={period === 'month' ? 4 : 0} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => viewType === 'amount' ? formatShortMoney(v) : v} />
                 <Tooltip formatter={(v) => viewType === 'amount' ? formatMoney(v) : `${v}건`} />
-                <Line type="monotone" dataKey={viewType === 'amount' ? '합계' : '총건수'} stroke="#EAB308" strokeWidth={2} dot={false} />
-              </LineChart>
+                {viewType === 'amount' ? (
+                  <>
+                    <Bar dataKey="쿠팡이츠" stackId="a" fill={COLORS.coupang} />
+                    <Bar dataKey="배민커넥트" stackId="a" fill={COLORS.baemin} />
+                    <Bar dataKey="요기요" stackId="a" fill={COLORS.yogiyo} />
+                    <Bar dataKey="기타" stackId="a" fill={COLORS.other} radius={[4, 4, 0, 0]} />
+                  </>
+                ) : (
+                  <>
+                    <Bar dataKey="쿠팡건수" stackId="a" fill={COLORS.coupang} name="쿠팡이츠" />
+                    <Bar dataKey="배민건수" stackId="a" fill={COLORS.baemin} name="배민커넥트" />
+                    <Bar dataKey="요기요건수" stackId="a" fill={COLORS.yogiyo} name="요기요" />
+                    <Bar dataKey="기타건수" stackId="a" fill={COLORS.other} name="기타" radius={[4, 4, 0, 0]} />
+                  </>
+                )}
+              </BarChart>
             )}
           </ResponsiveContainer>
         </div>
 
         <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
-          <h3 className="font-semibold text-gray-800 mb-4">📋 {period === 'year' ? '월별' : '일별'} 상세</h3>
+          <h3 className="font-semibold text-gray-800 mb-4">📋 {period === 'year' ? '월별' : period === 'month' ? '일별' : '요일별'} 상세</h3>
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {(period === 'year' ? monthlyData : dailyData).slice().reverse().map((item, idx) => (
+            {(period === 'year' ? yearData : period === 'month' ? monthData : weekData).slice().reverse().map((item, idx) => (
               <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                 <span className="font-medium text-gray-700">{item.date}</span>
                 <div className="text-right">

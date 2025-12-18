@@ -1,6 +1,6 @@
 {
   "name": "달돈 - 배달 수익 관리",
-  "short_name": "\"daldon\"",
+  "short_name": "daldon",
   "description": "배달기사를 위한 수익 관리 앱! 플랫폼별 수익, 통계, 목표 관리를 한 번에",
   "start_url": "/",
   "display": "standalone",
@@ -23,9 +23,6 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": [
-    "finance",
-    "productivity"
-  ],
+  "categories": ["finance", "productivity"],
   "prefer_related_applications": false
 }

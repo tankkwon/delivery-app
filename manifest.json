@@ -1,0 +1,29 @@
+{
+  "name": "달돈 - 배달 수익 관리",
+  "short_name": "달돈",
+  "description": "배달기사를 위한 수익 관리 앱! 플랫폼별 수익, 통계, 목표 관리를 한 번에",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#FFD700",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

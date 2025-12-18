@@ -38,13 +38,6 @@ const CoupangAd = () => {
   );
 };
 
-// AdMob 광고 배너 컴포넌트 (나중에 실제 광고로 교체)
-const AdBanner = () => (
-  <div className="bg-gray-800 rounded-xl p-3 flex items-center justify-center border border-gray-700">
-    <span className="text-gray-500 text-sm">📢 광고 영역</span>
-  </div>
-);
-
 // 달돈 로고 컴포넌트
 const Logo = () => (
   <div className="flex items-center gap-2">
@@ -664,11 +657,6 @@ export default function App() {
           </ResponsiveContainer>
         </div>
 
-        {/* AdMob 광고 (하단 - 나중에) */}
-        <div className="mb-4">
-          <AdBanner />
-        </div>
-
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white rounded-xl p-4 shadow-sm">
             <p className="text-gray-500 text-sm">이번 주</p>
@@ -759,11 +747,6 @@ export default function App() {
               </div>
             </>
           )}
-        </div>
-
-        {/* 광고 배너 */}
-        <div className="mb-4">
-          <AdBanner />
         </div>
 
         <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
@@ -936,11 +919,6 @@ export default function App() {
         </div>
 
         <button onClick={() => setCurrentMonth(new Date())} className="mx-auto block px-4 py-1 text-sm bg-yellow-100 text-yellow-700 rounded-full mb-4">오늘</button>
-        
-        {/* 광고 배너 */}
-        <div className="mb-4">
-          <AdBanner />
-        </div>
 
         <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
           <div className="grid grid-cols-7 gap-1 mb-2">
@@ -1026,11 +1004,6 @@ export default function App() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-800">수익 기록</h2>
           <button onClick={() => openInputModal()} className="bg-yellow-500 text-gray-900 p-2 rounded-full"><Plus className="w-5 h-5" /></button>
-        </div>
-
-        {/* 광고 배너 */}
-        <div className="mb-4">
-          <AdBanner />
         </div>
 
         {Object.keys(grouped).length === 0 ? (

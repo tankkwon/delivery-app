@@ -820,7 +820,7 @@ export default function App() {
         <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
           <h3 className="font-semibold text-gray-800 mb-4">📋 {period === 'year' ? '월별' : period === 'month' ? '일별' : '요일별'} 상세</h3>
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {(period === 'year' ? yearData : period === 'month' ? monthData : weekData).slice().reverse().map((item, idx) => (
+            {(period === 'year' ? yearData : period === 'month' ? monthData : weekData).map((item, idx) => (
               <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                 <span className="font-medium text-gray-700">{item.date}</span>
                 <div className="text-right">

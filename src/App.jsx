@@ -1072,6 +1072,8 @@ export default function App() {
     const fileInputRef = React.useRef(null);
     const [importStatus, setImportStatus] = useState('');
     const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
+    const [showPrivacy, setShowPrivacy] = useState(false);
 
     // 데이터 내보내기
     const exportData = () => {
@@ -1197,6 +1199,35 @@ export default function App() {
                 <p className="text-xs text-gray-500">모든 기록 삭제하기</p>
               </div>
             </button>
+
+            <div className="border-t border-gray-200 my-4"></div>
+
+            {/* 이용약관 */}
+            <button 
+              onClick={() => setShowTerms(true)}
+              className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-xl transition-colors"
+            >
+              <span className="text-lg">📄</span>
+              <span className="text-gray-700">이용약관</span>
+            </button>
+
+            {/* 개인정보처리방침 */}
+            <button 
+              onClick={() => setShowPrivacy(true)}
+              className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-xl transition-colors"
+            >
+              <span className="text-lg">🔒</span>
+              <span className="text-gray-700">개인정보처리방침</span>
+            </button>
+
+            {/* 문의하기 */}
+            <a 
+              href="mailto:daldon.app@gmail.com?subject=[달돈] 문의하기"
+              className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-xl transition-colors"
+            >
+              <span className="text-lg">📧</span>
+              <span className="text-gray-700">문의하기</span>
+            </a>
           </div>
 
           {/* 상태 메시지 */}
@@ -1232,6 +1263,92 @@ export default function App() {
             <p>달돈 v1.0</p>
             <p>배달 수익 관리 앱</p>
           </div>
+
+          {/* 이용약관 모달 */}
+          {showTerms && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-60">
+              <div className="bg-white w-11/12 max-w-md max-h-[80vh] rounded-2xl overflow-hidden">
+                <div className="flex justify-between items-center p-4 border-b">
+                  <h3 className="text-lg font-bold">📄 이용약관</h3>
+                  <button onClick={() => setShowTerms(false)} className="p-2"><X className="w-5 h-5" /></button>
+                </div>
+                <div className="p-4 overflow-y-auto max-h-[60vh] text-sm text-gray-700 space-y-4">
+                  <div>
+                    <h4 className="font-bold mb-2">제1조 (목적)</h4>
+                    <p>본 약관은 달돈(이하 "앱")이 제공하는 배달 수익 관리 서비스의 이용조건 및 절차에 관한 사항을 규정합니다.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-2">제2조 (서비스 내용)</h4>
+                    <p>앱은 배달 수익 기록, 통계 분석, 데이터 백업 등의 기능을 제공합니다. 모든 데이터는 사용자의 기기에 저장되며, 별도의 서버에 저장되지 않습니다.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-2">제3조 (광고)</h4>
+                    <p>앱은 무료로 제공되며, 서비스 운영을 위해 광고가 포함될 수 있습니다. 광고는 쿠팡파트너스 및 Google AdMob을 통해 제공됩니다.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-2">제4조 (면책조항)</h4>
+                    <p>앱에서 제공하는 수익 계산 및 통계는 참고용이며, 실제 세금 신고나 법적 용도로 사용할 경우 발생하는 문제에 대해 책임지지 않습니다.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-2">제5조 (데이터 관리)</h4>
+                    <p>사용자의 데이터는 기기에 로컬 저장되며, 앱 삭제 시 모든 데이터가 삭제됩니다. 데이터 백업은 사용자의 책임입니다.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-2">제6조 (약관의 변경)</h4>
+                    <p>본 약관은 필요시 변경될 수 있으며, 변경된 약관은 앱 내 공지를 통해 안내됩니다.</p>
+                  </div>
+                  <div className="text-gray-500 text-xs pt-4 border-t">
+                    <p>시행일: 2024년 12월 18일</p>
+                    <p>문의: daldon.app@gmail.com</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 개인정보처리방침 모달 */}
+          {showPrivacy && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-60">
+              <div className="bg-white w-11/12 max-w-md max-h-[80vh] rounded-2xl overflow-hidden">
+                <div className="flex justify-between items-center p-4 border-b">
+                  <h3 className="text-lg font-bold">🔒 개인정보처리방침</h3>
+                  <button onClick={() => setShowPrivacy(false)} className="p-2"><X className="w-5 h-5" /></button>
+                </div>
+                <div className="p-4 overflow-y-auto max-h-[60vh] text-sm text-gray-700 space-y-4">
+                  <div>
+                    <h4 className="font-bold mb-2">1. 개인정보 수집 항목</h4>
+                    <p>달돈은 별도의 개인정보를 수집하지 않습니다. 앱에서 입력하는 배달 수익 데이터는 사용자의 기기에만 저장되며, 외부 서버로 전송되지 않습니다.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-2">2. 광고 서비스</h4>
+                    <p>본 앱은 다음의 광고 서비스를 사용합니다:</p>
+                    <ul className="list-disc ml-5 mt-2 space-y-1">
+                      <li><strong>쿠팡파트너스:</strong> 쿠팡의 광고 서비스로, 쿠팡의 개인정보처리방침이 적용됩니다.</li>
+                      <li><strong>Google AdMob:</strong> Google의 광고 서비스로, Google의 개인정보처리방침이 적용됩니다.</li>
+                    </ul>
+                    <p className="mt-2">광고 서비스는 광고 최적화를 위해 기기 식별자 등의 정보를 수집할 수 있습니다.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-2">3. 데이터 저장</h4>
+                    <p>사용자가 입력한 모든 데이터(배달 기록, 수익, 목표 등)는 사용자의 기기 내 로컬 저장소에만 저장됩니다. 앱 삭제 시 모든 데이터가 함께 삭제됩니다.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-2">4. 제3자 제공</h4>
+                    <p>달돈은 사용자의 데이터를 제3자에게 제공하지 않습니다.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-2">5. 문의처</h4>
+                    <p>개인정보 관련 문의사항이 있으시면 아래로 연락해 주세요.</p>
+                    <p className="mt-1">이메일: daldon.app@gmail.com</p>
+                  </div>
+                  <div className="text-gray-500 text-xs pt-4 border-t">
+                    <p>시행일: 2024년 12월 18일</p>
+                    <p>최종 수정일: 2024년 12월 18일</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

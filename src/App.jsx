@@ -387,41 +387,62 @@ export default function App() {
 
   // 홈 화면
   const HomeScreen = () => {
-    const dayStats = getStatsForDate(selectedDay);
     const weekStats = getStats('week');
     const thisMonthStats = getStats('thisMonth');
     const progress = getThisMonthProgress();
+    
+    // 이번달 플랫폼별 통계
+    const getThisMonthPlatformStats = (platform) => {
+      const today = new Date();
+      const monthRecords = records.filter(r => { 
+        const d = new Date(r.date); 
+        return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && r.platform === platform; 
+      });
+      return {
+        amount: monthRecords.reduce((s, r) => s + r.amount, 0),
+        count: monthRecords.reduce((s, r) => s + (r.deliveryCount || 1), 0)
+      };
+    };
+    
+    const coupangStats = getThisMonthPlatformStats('coupang');
+    const baeminStats = getThisMonthPlatformStats('baemin');
+    const yogiyoStats = getThisMonthPlatformStats('yogiyo');
+    const otherStats = getThisMonthPlatformStats('other');
 
     return (
       <div className="p-4 pb-24">
-        {/* 일별 수익 - 화살표로 날짜 이동 */}
+        {/* 월별 수익 요약 카드 */}
         <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-5 text-white mb-4 shadow-lg">
-          {/* 날짜 네비게이션 */}
-          <div className="flex items-center justify-between mb-3">
-            <button onClick={goToPrevDay} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <div className="text-center">
-              <p className="text-yellow-400 font-medium">📅 {getSelectedDateString()}</p>
-              {!isToday() && (
-                <button onClick={goToToday} className="text-xs text-gray-400 underline mt-1">오늘로 이동</button>
-              )}
-            </div>
-            <button onClick={goToNextDay} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-              <ChevronRight className="w-6 h-6" />
-            </button>
+          <div className="text-center mb-3">
+            <p className="text-gray-400 text-sm">📅 {new Date().getMonth() + 1}월 총 수익</p>
+            <p className="text-3xl font-bold text-yellow-400 my-2">{formatMoney(thisMonthStats.total)}</p>
+            <p className="text-gray-400 text-sm">🚚 {thisMonthStats.totalDeliveries}건 배달</p>
           </div>
-          
-          {/* 수익 표시 */}
-          <p className="text-4xl font-bold text-center text-yellow-400 mb-2">{formatMoney(dayStats.total)}</p>
-          <p className="text-gray-400 text-sm text-center mb-4">🚚 {dayStats.totalDeliveries}건 배달</p>
-          
-          {/* 플랫폼별 */}
-          <div className="flex gap-2 text-xs flex-wrap justify-center">
-            <span className="bg-white/10 px-2 py-1 rounded-full">🔵 쿠팡 {formatMoney(getStatsForDate(selectedDay, 'coupang').total)}</span>
-            <span className="bg-white/10 px-2 py-1 rounded-full">🩵 배민 {formatMoney(getStatsForDate(selectedDay, 'baemin').total)}</span>
-            <span className="bg-white/10 px-2 py-1 rounded-full">🔴 요기요 {formatMoney(getStatsForDate(selectedDay, 'yogiyo').total)}</span>
-            <span className="bg-white/10 px-2 py-1 rounded-full">🟣 기타 {formatMoney(getStatsForDate(selectedDay, 'other').total)}</span>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="bg-white/10 rounded-lg p-2">
+              <div className="flex items-center gap-1 mb-1">
+                <span>🔵</span><span className="text-gray-300">쿠팡이츠</span>
+              </div>
+              <p className="font-semibold">{formatShortMoney(coupangStats.amount)} · {coupangStats.count}건</p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-2">
+              <div className="flex items-center gap-1 mb-1">
+                <span>🩵</span><span className="text-gray-300">배민커넥트</span>
+              </div>
+              <p className="font-semibold">{formatShortMoney(baeminStats.amount)} · {baeminStats.count}건</p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-2">
+              <div className="flex items-center gap-1 mb-1">
+                <span>🔴</span><span className="text-gray-300">요기요</span>
+              </div>
+              <p className="font-semibold">{formatShortMoney(yogiyoStats.amount)} · {yogiyoStats.count}건</p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-2">
+              <div className="flex items-center gap-1 mb-1">
+                <span>🟣</span><span className="text-gray-300">기타</span>
+              </div>
+              <p className="font-semibold">{formatShortMoney(otherStats.amount)} · {otherStats.count}건</p>
+            </div>
           </div>
         </div>
 
@@ -696,38 +717,34 @@ export default function App() {
           <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))} className="p-2"><ChevronRight className="w-5 h-5" /></button>
         </div>
         
-        {/* 월별 요약 카드 */}
+        {/* 일별 수익 카드 - 화살표로 날짜 이동 */}
         <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-4 mb-4 text-white">
-          <div className="text-center mb-3">
-            <p className="text-gray-400 text-sm">이번 달 총 수익</p>
-            <p className="text-2xl font-bold text-yellow-400">{formatMoney(getMonthTotal())}</p>
-            <p className="text-gray-400 text-sm">🚚 {getMonthTotalCount()}건 배달</p>
+          {/* 날짜 네비게이션 */}
+          <div className="flex items-center justify-between mb-3">
+            <button onClick={goToPrevDay} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <div className="text-center">
+              <p className="text-yellow-400 font-medium">📅 {getSelectedDateString()}</p>
+              {!isToday() && (
+                <button onClick={goToToday} className="text-xs text-gray-400 underline mt-1">오늘로 이동</button>
+              )}
+            </div>
+            <button onClick={goToNextDay} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <ChevronRight className="w-6 h-6" />
+            </button>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="bg-white/10 rounded-lg p-2">
-              <div className="flex items-center gap-1 mb-1">
-                <span>🔵</span><span className="text-gray-300">쿠팡이츠</span>
-              </div>
-              <p className="font-semibold">{formatShortMoney(coupangStats.amount)} · {coupangStats.count}건</p>
-            </div>
-            <div className="bg-white/10 rounded-lg p-2">
-              <div className="flex items-center gap-1 mb-1">
-                <span>🩵</span><span className="text-gray-300">배민커넥트</span>
-              </div>
-              <p className="font-semibold">{formatShortMoney(baeminStats.amount)} · {baeminStats.count}건</p>
-            </div>
-            <div className="bg-white/10 rounded-lg p-2">
-              <div className="flex items-center gap-1 mb-1">
-                <span>🔴</span><span className="text-gray-300">요기요</span>
-              </div>
-              <p className="font-semibold">{formatShortMoney(yogiyoStats.amount)} · {yogiyoStats.count}건</p>
-            </div>
-            <div className="bg-white/10 rounded-lg p-2">
-              <div className="flex items-center gap-1 mb-1">
-                <span>🟣</span><span className="text-gray-300">기타</span>
-              </div>
-              <p className="font-semibold">{formatShortMoney(otherStats.amount)} · {otherStats.count}건</p>
-            </div>
+          
+          {/* 수익 표시 */}
+          <p className="text-3xl font-bold text-center text-yellow-400 mb-2">{formatMoney(getStatsForDate(selectedDay).total)}</p>
+          <p className="text-gray-400 text-sm text-center mb-3">🚚 {getStatsForDate(selectedDay).totalDeliveries}건 배달</p>
+          
+          {/* 플랫폼별 */}
+          <div className="flex gap-2 text-xs flex-wrap justify-center">
+            <span className="bg-white/10 px-2 py-1 rounded-full">🔵 쿠팡 {formatMoney(getStatsForDate(selectedDay, 'coupang').total)}</span>
+            <span className="bg-white/10 px-2 py-1 rounded-full">🩵 배민 {formatMoney(getStatsForDate(selectedDay, 'baemin').total)}</span>
+            <span className="bg-white/10 px-2 py-1 rounded-full">🔴 요기요 {formatMoney(getStatsForDate(selectedDay, 'yogiyo').total)}</span>
+            <span className="bg-white/10 px-2 py-1 rounded-full">🟣 기타 {formatMoney(getStatsForDate(selectedDay, 'other').total)}</span>
           </div>
         </div>
 

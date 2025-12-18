@@ -100,7 +100,7 @@ const InputModal = ({ isOpen, onClose, onSave, initialDate }) => {
   const [deliveryCount, setDeliveryCount] = useState('');
   const [amount, setAmount] = useState('');
 
-  const COLORS = { coupang: '#00A0E0', baemin: '#2DC6C6', yogiyo: '#FA0050', other: '#9333EA' };
+  const COLORS = { coupang: '#3B82F6', baemin: '#10B981', yogiyo: '#FA0050', other: '#9333EA' };
   const PLATFORM_NAMES = { coupang: '쿠팡이츠', baemin: '배민커넥트', yogiyo: '요기요', other: '기타' };
 
   useEffect(() => {
@@ -219,7 +219,7 @@ export default function App() {
   // 선택된 날짜 (홈 화면용)
   const [selectedDay, setSelectedDay] = useState(new Date());
 
-  const COLORS = { coupang: '#00A0E0', baemin: '#2DC6C6', yogiyo: '#FA0050', other: '#9333EA' };
+  const COLORS = { coupang: '#3B82F6', baemin: '#10B981', yogiyo: '#FA0050', other: '#9333EA' };
   const PLATFORM_NAMES = { coupang: '쿠팡이츠', baemin: '배민커넥트', yogiyo: '요기요', other: '기타' };
 
   const saveToStorage = (newRecords) => {
@@ -678,30 +678,216 @@ export default function App() {
     const [period, setPeriod] = useState('week');
     const [platform, setPlatform] = useState('all');
     const [viewType, setViewType] = useState('amount');
+    const [selectedDate, setSelectedDate] = useState(new Date());
     
-    // 기간별 통계
-    const stats = period === 'week' ? getWeekStats(platform) : period === 'month' ? getThisMonthStats(platform) : getStats('year', platform);
+    // 이전/다음 이동
+    const goToPrev = () => {
+      const newDate = new Date(selectedDate);
+      if (period === 'week') {
+        newDate.setDate(newDate.getDate() - 7);
+      } else if (period === 'month') {
+        newDate.setMonth(newDate.getMonth() - 1);
+      } else {
+        newDate.setFullYear(newDate.getFullYear() - 1);
+      }
+      setSelectedDate(newDate);
+    };
     
-    // 기간별 데이터
-    const weekData = getWeekData();
-    const monthData = getThisMonthDailyData();
-    const yearData = getMonthlyData();
+    const goToNext = () => {
+      const newDate = new Date(selectedDate);
+      if (period === 'week') {
+        newDate.setDate(newDate.getDate() + 7);
+      } else if (period === 'month') {
+        newDate.setMonth(newDate.getMonth() + 1);
+      } else {
+        newDate.setFullYear(newDate.getFullYear() + 1);
+      }
+      setSelectedDate(newDate);
+    };
+    
+    const goToToday = () => {
+      setSelectedDate(new Date());
+    };
+    
+    const isCurrentPeriod = () => {
+      const today = new Date();
+      if (period === 'week') {
+        const todayMonday = new Date(today);
+        const dayOfWeek = today.getDay();
+        todayMonday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+        const selectedMonday = new Date(selectedDate);
+        const selectedDayOfWeek = selectedDate.getDay();
+        selectedMonday.setDate(selectedDate.getDate() - (selectedDayOfWeek === 0 ? 6 : selectedDayOfWeek - 1));
+        return todayMonday.toDateString() === selectedMonday.toDateString();
+      } else if (period === 'month') {
+        return today.getFullYear() === selectedDate.getFullYear() && today.getMonth() === selectedDate.getMonth();
+      } else {
+        return today.getFullYear() === selectedDate.getFullYear();
+      }
+    };
+    
+    // 선택된 주의 월요일~일요일 구하기
+    const getSelectedWeekRange = () => {
+      const dayOfWeek = selectedDate.getDay();
+      const monday = new Date(selectedDate);
+      monday.setDate(selectedDate.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      return { monday, sunday };
+    };
+    
+    // 선택된 주 데이터
+    const getSelectedWeekData = () => {
+      const { monday } = getSelectedWeekRange();
+      const data = [];
+      const dayNames = ['월', '화', '수', '목', '금', '토', '일'];
+      
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(monday);
+        date.setDate(monday.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayRecords = records.filter(r => r.date === dateStr);
+        const coupang = dayRecords.filter(r => r.platform === 'coupang').reduce((s, r) => s + r.amount, 0);
+        const baemin = dayRecords.filter(r => r.platform === 'baemin').reduce((s, r) => s + r.amount, 0);
+        const yogiyo = dayRecords.filter(r => r.platform === 'yogiyo').reduce((s, r) => s + r.amount, 0);
+        const other = dayRecords.filter(r => r.platform === 'other').reduce((s, r) => s + r.amount, 0);
+        const coupangCount = dayRecords.filter(r => r.platform === 'coupang').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+        const baeminCount = dayRecords.filter(r => r.platform === 'baemin').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+        const yogiyoCount = dayRecords.filter(r => r.platform === 'yogiyo').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+        const otherCount = dayRecords.filter(r => r.platform === 'other').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+        data.push({
+          date: `${dayNames[i]}(${date.getDate()})`,
+          쿠팡이츠: coupang, 배민커넥트: baemin, 요기요: yogiyo, 기타: other,
+          쿠팡건수: coupangCount, 배민건수: baeminCount, 요기요건수: yogiyoCount, 기타건수: otherCount,
+          합계: coupang + baemin + yogiyo + other,
+          총건수: coupangCount + baeminCount + yogiyoCount + otherCount,
+        });
+      }
+      return data;
+    };
+    
+    // 선택된 주 통계
+    const getSelectedWeekStats = (plat = 'all') => {
+      const { monday, sunday } = getSelectedWeekRange();
+      monday.setHours(0, 0, 0, 0);
+      sunday.setHours(23, 59, 59, 999);
+      
+      let filtered = records.filter(r => {
+        const d = new Date(r.date);
+        return d >= monday && d <= sunday;
+      });
+      
+      if (plat !== 'all') filtered = filtered.filter(r => r.platform === plat);
+      const total = filtered.reduce((sum, r) => sum + r.amount, 0);
+      const totalCount = filtered.reduce((sum, r) => sum + (r.deliveryCount || 1), 0);
+      return { total, totalDeliveries: totalCount, avg: totalCount > 0 ? Math.round(total / totalCount) : 0 };
+    };
+    
+    // 선택된 월 데이터
+    const getSelectedMonthData = () => {
+      const data = [];
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayRecords = records.filter(r => r.date === dateStr);
+        const coupang = dayRecords.filter(r => r.platform === 'coupang').reduce((s, r) => s + r.amount, 0);
+        const baemin = dayRecords.filter(r => r.platform === 'baemin').reduce((s, r) => s + r.amount, 0);
+        const yogiyo = dayRecords.filter(r => r.platform === 'yogiyo').reduce((s, r) => s + r.amount, 0);
+        const other = dayRecords.filter(r => r.platform === 'other').reduce((s, r) => s + r.amount, 0);
+        const coupangCount = dayRecords.filter(r => r.platform === 'coupang').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+        const baeminCount = dayRecords.filter(r => r.platform === 'baemin').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+        const yogiyoCount = dayRecords.filter(r => r.platform === 'yogiyo').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+        const otherCount = dayRecords.filter(r => r.platform === 'other').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+        data.push({
+          date: `${day}일`,
+          쿠팡이츠: coupang, 배민커넥트: baemin, 요기요: yogiyo, 기타: other,
+          쿠팡건수: coupangCount, 배민건수: baeminCount, 요기요건수: yogiyoCount, 기타건수: otherCount,
+          합계: coupang + baemin + yogiyo + other,
+          총건수: coupangCount + baeminCount + yogiyoCount + otherCount,
+        });
+      }
+      return data;
+    };
+    
+    // 선택된 월 통계
+    const getSelectedMonthStats = (plat = 'all') => {
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth();
+      
+      let filtered = records.filter(r => {
+        const d = new Date(r.date);
+        return d.getFullYear() === year && d.getMonth() === month;
+      });
+      
+      if (plat !== 'all') filtered = filtered.filter(r => r.platform === plat);
+      const total = filtered.reduce((sum, r) => sum + r.amount, 0);
+      const totalCount = filtered.reduce((sum, r) => sum + (r.deliveryCount || 1), 0);
+      return { total, totalDeliveries: totalCount, avg: totalCount > 0 ? Math.round(total / totalCount) : 0 };
+    };
+    
+    // 선택된 년 데이터 (12개월)
+    const getSelectedYearData = () => {
+      const data = [];
+      const year = selectedDate.getFullYear();
+      
+      for (let m = 0; m < 12; m++) {
+        const date = new Date(year, m, 1);
+        const monthRecords = records.filter(r => { const d = new Date(r.date); return d.getFullYear() === year && d.getMonth() === m; });
+        const coupang = monthRecords.filter(r => r.platform === 'coupang').reduce((s, r) => s + r.amount, 0);
+        const baemin = monthRecords.filter(r => r.platform === 'baemin').reduce((s, r) => s + r.amount, 0);
+        const yogiyo = monthRecords.filter(r => r.platform === 'yogiyo').reduce((s, r) => s + r.amount, 0);
+        const other = monthRecords.filter(r => r.platform === 'other').reduce((s, r) => s + r.amount, 0);
+        const coupangCount = monthRecords.filter(r => r.platform === 'coupang').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+        const baeminCount = monthRecords.filter(r => r.platform === 'baemin').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+        const yogiyoCount = monthRecords.filter(r => r.platform === 'yogiyo').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+        const otherCount = monthRecords.filter(r => r.platform === 'other').reduce((s, r) => s + (r.deliveryCount || 1), 0);
+        data.push({
+          date: `${m + 1}월`,
+          쿠팡이츠: coupang, 배민커넥트: baemin, 요기요: yogiyo, 기타: other,
+          쿠팡건수: coupangCount, 배민건수: baeminCount, 요기요건수: yogiyoCount, 기타건수: otherCount,
+          합계: coupang + baemin + yogiyo + other,
+          총건수: coupangCount + baeminCount + yogiyoCount + otherCount,
+        });
+      }
+      return data;
+    };
+    
+    // 선택된 년 통계
+    const getSelectedYearStats = (plat = 'all') => {
+      const year = selectedDate.getFullYear();
+      
+      let filtered = records.filter(r => {
+        const d = new Date(r.date);
+        return d.getFullYear() === year;
+      });
+      
+      if (plat !== 'all') filtered = filtered.filter(r => r.platform === plat);
+      const total = filtered.reduce((sum, r) => sum + r.amount, 0);
+      const totalCount = filtered.reduce((sum, r) => sum + (r.deliveryCount || 1), 0);
+      return { total, totalDeliveries: totalCount, avg: totalCount > 0 ? Math.round(total / totalCount) : 0 };
+    };
+    
+    // 기간별 통계 및 데이터
+    const stats = period === 'week' ? getSelectedWeekStats(platform) : period === 'month' ? getSelectedMonthStats(platform) : getSelectedYearStats(platform);
+    const chartData = period === 'week' ? getSelectedWeekData() : period === 'month' ? getSelectedMonthData() : getSelectedYearData();
     const ratio = getPlatformRatio();
     
     // 기간 텍스트
     const getPeriodText = () => {
-      const today = new Date();
       if (period === 'week') {
-        const dayOfWeek = today.getDay();
-        const monday = new Date(today);
-        monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-        const sunday = new Date(monday);
-        sunday.setDate(monday.getDate() + 6);
-        return `${monday.getMonth() + 1}/${monday.getDate()} ~ ${sunday.getMonth() + 1}/${sunday.getDate()} (이번 주)`;
+        const { monday, sunday } = getSelectedWeekRange();
+        const current = isCurrentPeriod() ? ' (이번 주)' : '';
+        return `${monday.getMonth() + 1}/${monday.getDate()} ~ ${sunday.getMonth() + 1}/${sunday.getDate()}${current}`;
       } else if (period === 'month') {
-        return `${today.getFullYear()}년 ${today.getMonth() + 1}월`;
+        const current = isCurrentPeriod() ? ' (이번 달)' : '';
+        return `${selectedDate.getFullYear()}년 ${selectedDate.getMonth() + 1}월${current}`;
       }
-      return '최근 1년';
+      const current = isCurrentPeriod() ? ' (올해)' : '';
+      return `${selectedDate.getFullYear()}년${current}`;
     };
 
     return (
@@ -719,29 +905,47 @@ export default function App() {
 
         <div className="flex gap-2 mb-4">
           {[{ key: 'week', label: '📅 주간' }, { key: 'month', label: '🗓️ 월간' }, { key: 'year', label: '📆 년간' }].map(p => (
-            <button key={p.key} onClick={() => setPeriod(p.key)} className={`px-4 py-2 rounded-full text-sm ${period === p.key ? 'bg-yellow-500 text-gray-900' : 'bg-gray-100 text-gray-600'}`}>{p.label}</button>
+            <button key={p.key} onClick={() => { setPeriod(p.key); setSelectedDate(new Date()); }} className={`px-4 py-2 rounded-full text-sm ${period === p.key ? 'bg-yellow-500 text-gray-900' : 'bg-gray-100 text-gray-600'}`}>{p.label}</button>
           ))}
         </div>
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {[{ key: 'all', label: '📊 통합' }, { key: 'coupang', label: '🔵 쿠팡' }, { key: 'baemin', label: '🩵 배민' }, { key: 'yogiyo', label: '🔴 요기요' }, { key: 'other', label: '🟣 기타' }].map(p => (
+          {[{ key: 'all', label: '📊 통합' }, { key: 'coupang', label: '🔵 쿠팡' }, { key: 'baemin', label: '🟢 배민' }, { key: 'yogiyo', label: '🔴 요기요' }, { key: 'other', label: '🟣 기타' }].map(p => (
             <button key={p.key} onClick={() => setPlatform(p.key)} className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap ${platform === p.key ? 'bg-gray-800 text-yellow-400' : 'bg-gray-100 text-gray-600'}`}>{p.label}</button>
           ))}
         </div>
 
         <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-4 mb-4 text-white">
-          <p className="text-gray-400 text-sm mb-1">{getPeriodText()}{platform !== 'all' && ` · ${PLATFORM_NAMES[platform]}`}</p>
+          {/* 기간 네비게이션 */}
+          <div className="flex items-center justify-between mb-3">
+            <button onClick={goToPrev} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <div className="text-center">
+              <p className="text-yellow-400 font-medium">{getPeriodText()}</p>
+              {!isCurrentPeriod() && (
+                <button onClick={goToToday} className="text-xs text-gray-400 underline mt-1">
+                  {period === 'week' ? '이번 주로' : period === 'month' ? '이번 달로' : '올해로'}
+                </button>
+              )}
+            </div>
+            <button onClick={goToNext} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+          
+          {platform !== 'all' && <p className="text-gray-400 text-sm mb-1 text-center">{PLATFORM_NAMES[platform]}</p>}
           {viewType === 'amount' ? (
             <>
-              <p className="text-3xl font-bold text-yellow-400 mb-3">{formatMoney(stats.total)}</p>
-              <div className="flex gap-4 text-sm">
+              <p className="text-3xl font-bold text-yellow-400 mb-3 text-center">{formatMoney(stats.total)}</p>
+              <div className="flex justify-center gap-6 text-sm">
                 <div><p className="text-gray-400">배달 건수</p><p className="font-semibold">{stats.totalDeliveries}건</p></div>
                 <div><p className="text-gray-400">건당 평균</p><p className="font-semibold">{formatMoney(stats.avg)}</p></div>
               </div>
             </>
           ) : (
             <>
-              <p className="text-3xl font-bold text-yellow-400 mb-3">{stats.totalDeliveries}건</p>
-              <div className="flex gap-4 text-sm">
+              <p className="text-3xl font-bold text-yellow-400 mb-3 text-center">{stats.totalDeliveries}건</p>
+              <div className="flex justify-center gap-6 text-sm">
                 <div><p className="text-gray-400">총 금액</p><p className="font-semibold">{formatMoney(stats.total)}</p></div>
                 <div><p className="text-gray-400">건당 평균</p><p className="font-semibold">{formatMoney(stats.avg)}</p></div>
               </div>
@@ -752,58 +956,34 @@ export default function App() {
         <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
           <h3 className="font-semibold text-gray-800 mb-4">{period === 'year' ? '월별' : period === 'month' ? '일별' : '요일별'} {viewType === 'amount' ? '수익' : '배달 건수'} 추이</h3>
           <ResponsiveContainer width="100%" height={200}>
-            {period === 'year' ? (
-              <BarChart data={yearData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => viewType === 'amount' ? formatShortMoney(v) : v} />
-                <Tooltip formatter={(v) => viewType === 'amount' ? formatMoney(v) : `${v}건`} />
-                {viewType === 'amount' ? (
-                  <>
-                    <Bar dataKey="쿠팡이츠" stackId="a" fill={COLORS.coupang} />
-                    <Bar dataKey="배민커넥트" stackId="a" fill={COLORS.baemin} />
-                    <Bar dataKey="요기요" stackId="a" fill={COLORS.yogiyo} />
-                    <Bar dataKey="기타" stackId="a" fill={COLORS.other} radius={[4, 4, 0, 0]} />
-                  </>
-                ) : (
-                  <>
-                    <Bar dataKey="쿠팡건수" stackId="a" fill={COLORS.coupang} name="쿠팡이츠" />
-                    <Bar dataKey="배민건수" stackId="a" fill={COLORS.baemin} name="배민커넥트" />
-                    <Bar dataKey="요기요건수" stackId="a" fill={COLORS.yogiyo} name="요기요" />
-                    <Bar dataKey="기타건수" stackId="a" fill={COLORS.other} name="기타" radius={[4, 4, 0, 0]} />
-                  </>
-                )}
-              </BarChart>
-            ) : (
-              <BarChart data={period === 'week' ? weekData : monthData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={period === 'month' ? 4 : 0} />
-                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => viewType === 'amount' ? formatShortMoney(v) : v} />
-                <Tooltip formatter={(v) => viewType === 'amount' ? formatMoney(v) : `${v}건`} />
-                {viewType === 'amount' ? (
-                  <>
-                    <Bar dataKey="쿠팡이츠" stackId="a" fill={COLORS.coupang} />
-                    <Bar dataKey="배민커넥트" stackId="a" fill={COLORS.baemin} />
-                    <Bar dataKey="요기요" stackId="a" fill={COLORS.yogiyo} />
-                    <Bar dataKey="기타" stackId="a" fill={COLORS.other} radius={[4, 4, 0, 0]} />
-                  </>
-                ) : (
-                  <>
-                    <Bar dataKey="쿠팡건수" stackId="a" fill={COLORS.coupang} name="쿠팡이츠" />
-                    <Bar dataKey="배민건수" stackId="a" fill={COLORS.baemin} name="배민커넥트" />
-                    <Bar dataKey="요기요건수" stackId="a" fill={COLORS.yogiyo} name="요기요" />
-                    <Bar dataKey="기타건수" stackId="a" fill={COLORS.other} name="기타" radius={[4, 4, 0, 0]} />
-                  </>
-                )}
-              </BarChart>
-            )}
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={period === 'month' ? 4 : 0} />
+              <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => viewType === 'amount' ? formatShortMoney(v) : v} />
+              <Tooltip formatter={(v) => viewType === 'amount' ? formatMoney(v) : `${v}건`} />
+              {viewType === 'amount' ? (
+                <>
+                  <Bar dataKey="쿠팡이츠" stackId="a" fill={COLORS.coupang} />
+                  <Bar dataKey="배민커넥트" stackId="a" fill={COLORS.baemin} />
+                  <Bar dataKey="요기요" stackId="a" fill={COLORS.yogiyo} />
+                  <Bar dataKey="기타" stackId="a" fill={COLORS.other} radius={[4, 4, 0, 0]} />
+                </>
+              ) : (
+                <>
+                  <Bar dataKey="쿠팡건수" stackId="a" fill={COLORS.coupang} name="쿠팡이츠" />
+                  <Bar dataKey="배민건수" stackId="a" fill={COLORS.baemin} name="배민커넥트" />
+                  <Bar dataKey="요기요건수" stackId="a" fill={COLORS.yogiyo} name="요기요" />
+                  <Bar dataKey="기타건수" stackId="a" fill={COLORS.other} name="기타" radius={[4, 4, 0, 0]} />
+                </>
+              )}
+            </BarChart>
           </ResponsiveContainer>
         </div>
 
         <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
           <h3 className="font-semibold text-gray-800 mb-4">📋 {period === 'year' ? '월별' : period === 'month' ? '일별' : '요일별'} 상세</h3>
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {(period === 'year' ? yearData : period === 'month' ? monthData : weekData).map((item, idx) => (
+            {chartData.map((item, idx) => (
               <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                 <span className="font-medium text-gray-700">{item.date}</span>
                 <div className="text-right">

@@ -1409,10 +1409,12 @@ export default function App() {
 
             {/* 문의하기 */}
             <a 
-              href="mailto:daldon.app@gmail.com?subject=[달돈] 문의하기"
+              href="https://docs.google.com/forms/d/e/1FAIpQLScYgzho0S7gsBQTDEFsvlTIUFY_rteJFGFuz0jiVya4ZzFytQ/viewform"
+              target="_blank"
+              rel="noopener noreferrer"
               className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-xl transition-colors"
             >
-              <span className="text-lg">📧</span>
+              <span className="text-lg">📝</span>
               <span className="text-gray-700">문의하기</span>
             </a>
           </div>
